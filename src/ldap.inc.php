@@ -1,4 +1,4 @@
-<?php namespace Ltb\Ldap
+<?php namespace Ltb\Ldap;
 # LDAP Functions 
 
 function ltb_ldap_connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout) {
