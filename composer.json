@@ -1,3 +1,7 @@
 {
     "name": "ltb/ldap"
+    "autoload": {
+        "psr-4": {"ltb\\ldap\\": "src/"}
+    },
+    "require": {}
 }
