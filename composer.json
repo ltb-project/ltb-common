@@ -1,7 +1,15 @@
 {
     "name": "ltb/ldap",
+    "description": "ldap common tools for ltb projects",
+    "license": "GPL-3.0-or-later",
     "autoload": {
-        "psr-4": {"ltb\\ldap\\": "src/"}
+        "psr-4": {"ltb\\ldap\\": "src/Ltb"}
     },
-    "require": {}
+    "autoload-dev": {
+        "psr-4": {"ltb\\ldap\\": "tests/Ltb"}
+    },
+    "require": {
+        "php": ">=8.0",
+        "ext-ldap": ">=8.0"
+    }
 }
