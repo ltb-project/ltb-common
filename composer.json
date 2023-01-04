@@ -1,6 +1,6 @@
 {
-    "name": "ltb/ldap",
-    "description": "ldap common tools for ltb projects",
+    "name": "ltb-project/ldap",
+    "description": "ldap common tools for ltb-project self-service-password service-desk and white-pages white-pages.",
     "license": "GPL-3.0-or-later",
     "autoload": {
         "psr-4": {"Ltb\\": "src/Ltb"}

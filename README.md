@@ -1,6 +1,6 @@
-# LTB-LDAP
+# ltb-project/ldap
 
-common library for ltb projects usage of ldap.
+php composer common library for ltb projects usage of ldap
 
 This covers the 3 following projects
 
