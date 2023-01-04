@@ -9,7 +9,7 @@
         "psr-4": {"Ltb\\": "tests/Ltb"}
     },
     "require": {
-        "php": ">=8.0",
-        "ext-ldap": ">=8.0"
+        "php": ">=7.4",
+        "ext-ldap": ">=7.4"
     }
 }
