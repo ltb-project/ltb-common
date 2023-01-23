@@ -40,12 +40,14 @@ replace :
 
 ```
 ldap_sort($link, $result, $sortfilter)
+$entries = ldap_get_entries($link, $result);
 ```
 
 by
 
 ```
-Ldap::ldapSort($result, $sortfilter)
+$entries = ldap_get_entries($link, $result);
+Ldap::ldapSort($entries, $sortfilter)
 ```
 
-remark : $link is unused so not provided as parameter.
+remark : $entries should be retrieved first, sorting occur on those.
