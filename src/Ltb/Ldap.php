@@ -65,5 +65,75 @@ final class Ldap {
 
         return $return;
     }
+
+    # if key is not found in attributes, order of entries is preserved
+    static function ldapSort(array &$entries, $key)
+    {
+        # 'count' is an additionnal attribute of ldap entries that will be preserved
+        # remove it since lost by usort ( changed to integer index )
+        $count=$entries['count'];
+        unset($entries['count']);
+
+        $sort_key=$key;
+
+        usort($entries,
+              fn($a, $b) =>
+              ( is_array($a) and is_array($b) ) ?
+                ( array_key_exists($sort_key,$a) ?
+                    ( array_key_exists($sort_key,$b) ? $a[$sort_key][0] <=> $b[$sort_key][0] : 1 )
+                  : ( array_key_exists($sort_key,$b) ? -1 : 0 ))
+              : 0
+        );
+
+
+        # preserve count since sorting should not change number of elements.
+        $entries['count']=$count;
+
+        return true;
+
+    }
+
+    # not yet fully tested, please use ldapSort directly
+    #
+    # ldap_search + ldap_sort combined done at server side if possible
+    # if not supported fallback on client sorting.
+    static function sorted_search($ldap, $ldap_base, $ldap_filter, $attributes, $sortby, $ldap_size_limit) {
+
+        if (isset($sortby) and $sortby)
+        {
+            $check_attribute='supportedControl';
+            $check = ldap_read($ldap, '', '(objectClass=*)', [$check_attribute]);
+            $entries=ldap_get_entries($ldap, $check);
+            if (in_array(LDAP_CONTROL_SORTREQUEST, $entries[0]['supportedcontrol'],true)) {
+                # server side sort
+                $controls=[['oid' => LDAP_CONTROL_SORTREQUEST, 'value' => [['attr'=>$sortby]]]];
+                # if $sortby is not in $attributes ? what to do ?
+                $ldap_result = ldap_search($ldap, $ldap_base, $ldap_filter, $attributes, 0, $ldap_size_limit, -1, LDAP_DEREF_NEVER, $controls );
+                $errno = ldap_errno($ldap);
+                if ( $errno === 0 )
+                {
+                    $entries=ldap_get_entries($ldap, $ldap_result);
+                }
+            }
+        }
+
+        if (!isset($errno))
+        {
+            $ldap_result = ldap_search($ldap, $ldap_base, $ldap_filter, $attributes, 0, $ldap_size_limit);
+            $errno = ldap_errno($ldap);
+            if ( $errno === 0 )
+            {
+                $entries=ldap_get_entries($ldap, $ldap_result);
+                Ldap::ldapSort($entries,$sortby);
+            }
+            else {
+                var_dump($errno);
+            }
+        }
+
+        return array($ldap_result,$errno,$entries);
+    }
+
+
 }
 ?>
