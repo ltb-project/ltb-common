@@ -27,7 +27,8 @@ This package is published on https://packagist.org/packages/ltb-project/ldap
 ## ltb projects coverage
 
 
-|||version|commentaire|bug tracking|
+|project|url  |version|commen     |bug tracking|
+|-------|-----|-------|-----------|------------|
 |self-service-password|<https://github.com/ltb-project/self-service-password>|wip|||
 |service-desk|<https://github.com/ltb-project/service-desk>|wip|||
 |white-pages|<https://github.com/ltb-project/white-pages>|wip||https://github.com/ltb-project/white-pages/issues/119|
