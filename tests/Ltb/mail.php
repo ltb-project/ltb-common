@@ -37,12 +37,13 @@ $mail_charset = 'utf-8';
 $mail_priority = 3;
 
 $login='ltbtest';
-$mail='ltbtest@dev.worteks.com';
+$mail_to='ltbtest@dev.worteks.com';
+$mail=array('{mail}','happy@dev.worteks.com');
 $newpassword='!:/%%newpassword';
 
-$data = array( "login" => $login, "mail" => $mail, "password" => $newpassword);
+$data = array( "login" => $login, "mail" => $mail_to, "password" => $newpassword);
 
 $messages['changesubject'] = "Votre mot de passe a été changé";
-$messages['changemessage'] = "Bonjour {login},\n\nVotre mot de passe a été changé.\n\nSi vous n'êtes pas à l'origine de cette demande, contactez votre administrateur immédiatement.";
+$messages['changemessage'] = "Bonjour {login},\n\nVotre mot de passe a été changé.\n\nSi vous n'êtes pas à l'origine de cette demande, contactez votre administrateur immédiatement. votre mail : {mail}";
 
 Mail::send_mail_global($mail, $mail_from, $mail_from_name, $messages["changesubject"], $messages["changemessage"].$mail_signature, $data);

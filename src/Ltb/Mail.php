@@ -72,7 +72,7 @@ final class Mail {
     /* @function boolean send_mail(PHPMailer $mailer, string $mail, string $mail_from, string $subject, string $body, array $data)
      * Send a mail, replace strings in body
      * @param mailer PHPMailer object
-     * @param mail Destination
+     * @param mail Destination or array of destinations.
      * @param mail_from Sender
      * @param subject Subject
      * @param body Body
@@ -93,17 +93,28 @@ final class Mail {
             return $result;
         }
 
-        /* Replace data in mail, subject and body */
+        /* Replace {$key} fields from data in mail, mail_fromn subject and body */
         foreach ($data as $key => $value ) {
+            # remark $mail can be an array, this is supported by str_replace.
             $mail = str_replace('{'.$key.'}', $value, $mail);
             $mail_from = str_replace('{'.$key.'}', $value, $mail_from);
             $subject = str_replace('{'.$key.'}', $value, $subject);
             $body = str_replace('{'.$key.'}', $value, $body);
         }
 
+        # if not done addAddress and addReplyTo are cumulated at each call
+        $mailer->clearAddresses();
         $mailer->setFrom($mail_from, $mail_from_name);
         $mailer->addReplyTo($mail_from, $mail_from_name);
-        $mailer->addAddress($mail);
+        # support list of mails
+        if ( is_array($mail) ) {
+            foreach( $mail as $mailstr ) {
+                $mailer->addAddress($mailstr);
+            }
+        }
+        else {
+            $mailer->addAddress($mail);
+        }
         $mailer->Subject = $subject;
         $mailer->Body = $body;
 
