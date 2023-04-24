@@ -35,18 +35,19 @@ require __DIR__ . 'vendor/autoload.php';
 ### LDAP connection
 
 ```php
-    $ldap_url = "ldap://ldap.example.com";
-    $ldap_starttls = false;
-    $dn = "cn=admin,dc=example,dc=com";
-    $password = "secret";
-    $ldap_network_timeout = 3;
+$ldap_url = "ldap://ldap.example.com";
+$ldap_starttls = false;
+$dn = "cn=admin,dc=example,dc=com";
+$password = "secret";
+$ldap_network_timeout = 3;
 
-    $ldap_connection = \Ltb\Ldap::connect($ldap_url, $ldap_starttls, $dn, $password, $ldap_network_timeout);
+$ldap_connection = \Ltb\Ldap::connect($ldap_url, $ldap_starttls, $dn, $password, $ldap_network_timeout);
 
-    $ldap = $ldap_connection[0];
-    $result = $ldap_connection[1];
+$ldap = $ldap_connection[0];
+$result = $ldap_connection[1];
 
-    if( !$result ) {
-        exit 1;
-    }
+if (!$result) {
+    error_log("Unable to connect to $ldap_url");
+    exit 1;
+}
 ```
