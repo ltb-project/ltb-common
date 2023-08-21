@@ -25,7 +25,7 @@ final class Ldap {
             $bind = ldap_bind($ldap, $ldap_binddn, $ldap_bindpw);
         } elseif ( isset($ldap_krb5ccname) ) {
             putenv("KRB5CCNAME=".$ldap_krb5ccname);
-            $bind = ldap_sasl_bind($ldap, NULL, NULL, 'GSSAPI') or error_log('Failed to GSSAPI bind.');
+            $bind = ldap_sasl_bind($ldap, NULL, NULL, 'GSSAPI') or error_log('LDAP - GSSAPI Bind failed');
         } else {
             $bind = ldap_bind($ldap);
         }
