@@ -5,7 +5,7 @@ final class Ldap {
 
     # LDAP Functions 
 
-    static function connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout) {
+    static function connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout, $ldap_krb5ccname) {
 
         # Connect to LDAP
         $ldap = \ldap_connect($ldap_url);
@@ -23,6 +23,9 @@ final class Ldap {
         # Bind
         if ( isset($ldap_binddn) && isset($ldap_bindpw) ) {
             $bind = ldap_bind($ldap, $ldap_binddn, $ldap_bindpw);
+        } elseif ( isset($ldap_krb5ccname) ) {
+            putenv("KRB5CCNAME=".$ldap_krb5ccname);
+            $bind = ldap_sasl_bind($ldap, NULL, NULL, 'GSSAPI') or error_log('LDAP - GSSAPI Bind failed');
         } else {
             $bind = ldap_bind($ldap);
         }
