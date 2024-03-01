@@ -70,6 +70,31 @@ class PhpLDAP {
   {
     return ldap_count_entries($ldap, $result);
   }
-
+  
+  public static function ldap_modify_batch($ldap, $dn, $modifications)
+  {
+      return ldap_modify_batch($ldap, $dn, $modifications);
+  }
+  
+  public static function ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls)
+  {
+      return ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls);
+  }
+  
+  public static function ldap_mod_replace_ext($ldap, $dn, $userdata, $ctrls)
+  {
+      return ldap_mod_replace_ext($ldap, $dn, $userdata, $ctrls);
+  }
+  
+  public static function ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)
+  {
+      return ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls);
+  }
+  
+  public static function ldap_mod_replace($ldap, $dn, $userdata)
+  {
+      return ldap_mod_replace($ldap, $dn, $userdata);
+  }
+  
 }
 ?>
