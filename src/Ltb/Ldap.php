@@ -136,7 +136,147 @@ final class Ldap {
 
         return array($ldap_result,$errno,$entries);
     }
+    
+    /**
+     * Gets the value of the password attribute
+     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param string $dn the dn of the user
+     * @param type $pwdattribute the Attriubte that contains the password
+     * @return string the value of $pwdattribute
+     */
+    static function get_hashed_password($ldap, $dn, $pwdattribute): string {
+        $search_userpassword = ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
+        if ($search_userpassword) {
+            return ldap_get_values($ldap, ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
+        }
+    }
+    
+    /**
+     * Changes the password of an user while binded as the user in an Active Directory
+     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param string $dn the dn of the user
+     * @param string $oldpassword the old password
+     * @param string $password the new password
+     * @return array [$error_code, $error_msg]
+     */
+    static function change_ad_password_as_user($ldap, $dn, $oldpassword, $password): array {
+        # The AD password change procedure is modifying the attribute unicodePwd by
+        # first deleting unicodePwd with the old password and them adding it with the
+        # the new password
+        $oldpassword_hashed = make_ad_password($oldpassword);
 
+        $modifications = array(
+            array(
+                "attrib" => "unicodePwd",
+                "modtype" => LDAP_MODIFY_BATCH_REMOVE,
+                "values" => array($oldpassword_hashed),
+            ),
+            array(
+                "attrib" => "unicodePwd",
+                "modtype" => LDAP_MODIFY_BATCH_ADD,
+                "values" => array($password),
+            ),
+        );
+
+        ldap_modify_batch($ldap, $dn, $modifications);
+        $error_code = ldap_errno($ldap);
+        $error_msg = ldap_error($ldap);
+        return array($error_code, $error_msg);
+    }
+    
+    /**
+     * Changes the Password using extended password modification
+     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param string $dn the dn of the user
+     * @param string $oldpassword the old password
+     * @param string $password the new password
+     * @param array $userdata
+     * @param bool $use_ppolicy_control
+     * @return array [$error_code, $error_msg, $ppolicy_error_code]
+     */
+    static function change_password_with_exop($ldap, $dn, $oldpassword, $password, $userdata, $use_ppolicy_control): array {
+        $ppolicy_error_code = "";
+        $exop_passwd = FALSE;
+        if ( $use_ppolicy_control ) {
+            $ctrls = array();
+            $exop_passwd = ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls);
+            $error_code = ldap_errno($ldap);
+            $error_msg = ldap_error($ldap);
+            if (!$exop_passwd) {
+                if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
+                    $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
+                    if (isset($value['error'])) {
+                        $ppolicy_error_code = $value['error'];
+                        error_log("LDAP - Ppolicy error code: $ppolicy_error_code");
+                    }
+                }
+            }
+        } else {
+            $exop_passwd = ldap_exop_passwd($ldap, $dn, $oldpassword, $password);
+            $error_code = ldap_errno($ldap);
+            $error_msg = ldap_error($ldap);
+        }
+        if ($exop_passwd === TRUE) {
+            # If password change works update other data
+            if (!empty($userdata)) {
+                ldap_mod_replace($ldap, $dn, $userdata);
+                $error_code = ldap_errno($ldap);
+                $error_msg = ldap_error($ldap);
+            }
+        }
+        return array($error_code, $error_msg, $ppolicy_error_code);
+    }
+    
+    /**
+     * Changes Password using Password Policy Control
+     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param string $dn the dn of the user
+     * @param array $userdata the array, containing the new (hashed) password
+     * @return type
+     */
+    static function change_password_using_ppolicy($ldap, $dn, $userdata): array {
+        $error_code = "";
+        $error_msg = "";
+        $ctrls = array();
+        $ppolicy_error_code = "";
+        $ppolicy_replace = ldap_mod_replace_ext($ldap, $dn, $userdata, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
+        if (ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)) {
+            if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
+                $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
+                if (isset($value['error'])) {
+                    $ppolicy_error_code = $value['error'];
+                    error_log("LDAP - Ppolicy error code: $ppolicy_error_code");
+                }
+            }
+        }
+        return array($error_code, $error_msg, $ppolicy_error_code);
+    }
+    
+    /**
+     * Changes Password
+     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param string $dn the dn of the user
+     * @param array $userdata the array, containing the new (hashed) password
+     * @return type
+     */
+    static function change_password($ldap, $dn, $userdata): array {
+        ldap_mod_replace($ldap, $dn, $userdata);
+        $error_code = ldap_errno($ldap);
+        $error_msg = ldap_error($ldap);
+        return array($error_code, $error_msg);
+    }
+
+    const PPOLICY_ERROR_CODE_TO_RESULT_MAPPER = [
+            0 => "passwordExpired",
+            1 => "accountLocked",
+            2 => "changeAfterReset",
+            3 => "passwordModNotAllowed",
+            4 => "mustSupplyOldPassword",
+            5 => "badquality",
+            6 => "tooshort",
+            7 => "tooyoung",
+            8 => "inhistory"
+        ];
 
 }
 ?>
