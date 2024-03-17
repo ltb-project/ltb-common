@@ -141,10 +141,10 @@ final class Ldap {
      * Gets the value of the password attribute
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
-     * @param type $pwdattribute the Attriubte that contains the password
+     * @param type $pwdattribute the Attribute that contains the password
      * @return string the value of $pwdattribute
      */
-    static function get_hashed_password($ldap, $dn, $pwdattribute): string {
+    static function get_password_value($ldap, $dn, $pwdattribute): string {
         $search_userpassword = ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
             return ldap_get_values($ldap, ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
@@ -184,6 +184,18 @@ final class Ldap {
         return array($error_code, $error_msg);
     }
     
+    static protected function get_ppolicy_error_code($ctrls) {
+        if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
+            $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
+            if (isset($value['error'])) {
+                $ppolicy_error_code = $value['error'];
+                error_log("LDAP - Ppolicy error code: $ppolicy_error_code");
+                return $ppolicy_error_code;
+            }
+        }
+        return false;
+    }
+
     /**
      * Changes the Password using extended password modification
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
@@ -192,10 +204,10 @@ final class Ldap {
      * @param string $password the new password
      * @param array $userdata
      * @param bool $use_ppolicy_control
-     * @return array [$error_code, $error_msg, $ppolicy_error_code]
+     * @return array 0: error_code, 1: error_msg, 2: ppolicy_error_code
      */
-    static function change_password_with_exop($ldap, $dn, $oldpassword, $password, $userdata, $use_ppolicy_control): array {
-        $ppolicy_error_code = "";
+    static function change_password_with_exop($ldap, $dn, $oldpassword, $password, $use_ppolicy_control): array {
+        $ppolicy_error_code = false;
         $exop_passwd = FALSE;
         if ( $use_ppolicy_control ) {
             $ctrls = array();
@@ -203,63 +215,43 @@ final class Ldap {
             $error_code = ldap_errno($ldap);
             $error_msg = ldap_error($ldap);
             if (!$exop_passwd) {
-                if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
-                    $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
-                    if (isset($value['error'])) {
-                        $ppolicy_error_code = $value['error'];
-                        error_log("LDAP - Ppolicy error code: $ppolicy_error_code");
-                    }
-                }
+                $ppolicy_error_code = self::get_ppolicy_error_code($ctrls);
             }
         } else {
             $exop_passwd = ldap_exop_passwd($ldap, $dn, $oldpassword, $password);
             $error_code = ldap_errno($ldap);
             $error_msg = ldap_error($ldap);
         }
-        if ($exop_passwd === TRUE) {
-            # If password change works update other data
-            if (!empty($userdata)) {
-                ldap_mod_replace($ldap, $dn, $userdata);
-                $error_code = ldap_errno($ldap);
-                $error_msg = ldap_error($ldap);
-            }
-        }
         return array($error_code, $error_msg, $ppolicy_error_code);
     }
     
     /**
-     * Changes Password using Password Policy Control
+     * Changes attributes (and password) using Password Policy Control
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
      * @param array $userdata the array, containing the new (hashed) password
-     * @return type
+     * @return array 0: error_code, 1: error_msg, 2: ppolicy_error_code
      */
-    static function change_password_using_ppolicy($ldap, $dn, $userdata): array {
+    static function modify_attributes_using_ppolicy($ldap, $dn, $userdata): array {
         $error_code = "";
         $error_msg = "";
         $ctrls = array();
-        $ppolicy_error_code = "";
+        $ppolicy_error_code = false;
         $ppolicy_replace = ldap_mod_replace_ext($ldap, $dn, $userdata, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
         if (ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)) {
-            if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
-                $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
-                if (isset($value['error'])) {
-                    $ppolicy_error_code = $value['error'];
-                    error_log("LDAP - Ppolicy error code: $ppolicy_error_code");
-                }
-            }
+            $ppolicy_error_code = self::get_ppolicy_error_code($ctrls);
         }
         return array($error_code, $error_msg, $ppolicy_error_code);
     }
     
     /**
-     * Changes Password
+     * Changes attributes (and password)
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
      * @param array $userdata the array, containing the new (hashed) password
-     * @return type
+     * @return array 0: error_code, 1: error_msg
      */
-    static function change_password($ldap, $dn, $userdata): array {
+    static function modify_attributes($ldap, $dn, $userdata): array {
         ldap_mod_replace($ldap, $dn, $userdata);
         $error_code = ldap_errno($ldap);
         $error_msg = ldap_error($ldap);
