@@ -18,7 +18,7 @@ final class LtbUtil {
         $size_limit_reached = false;
 
         # Connect to LDAP
-        $ldap_connection = \Ltb\Ldap::connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout);
+        $ldap_connection = \Ltb\Ldap::connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout, null);
 
         $ldap = $ldap_connection[0];
         $result = $ldap_connection[1];
@@ -32,25 +32,25 @@ final class LtbUtil {
             $attributes[] = $attributes_map[$search_result_sortby]['attribute'];
 
             # Search for users
-            $search = ldap_search($ldap, $ldap_user_base, $ldap_filter, $attributes, 0, $ldap_size_limit);
+            $search = \Ltb\PhpLDAP::ldap_search($ldap, $ldap_user_base, $ldap_filter, $attributes, 0, $ldap_size_limit);
 
-            $errno = ldap_errno($ldap);
+            $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
             if ( $errno == 4) {
                 $size_limit_reached = true;
             }
             if ( $errno != 0 and $errno !=4 ) {
                 $result = "ldaperror";
-                error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+                error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
             } else {
 
                 # Get search results
-                $nb_entries = ldap_count_entries($ldap, $search);
+                $nb_entries = \Ltb\PhpLDAP::ldap_count_entries($ldap, $search);
 
                 if ($nb_entries === 0) {
                     $result = "noentriesfound";
                 } else {
-                    $entries = ldap_get_entries($ldap, $search);
+                    $entries = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
 
                     # Sort entries
                     if (isset($search_result_sortby)) {
