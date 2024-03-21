@@ -150,7 +150,7 @@ final class Mail {
     # To provide compatibility
     static function __callStatic($name, $arguments) {
         $count = count($arguments);
-        if ($name == "init_mailer" && $count == 0) {
+        if ($name == "init_mailer") {
             if ($count == 0) {
                 return self::init_mailer_legacy();
             } else {
