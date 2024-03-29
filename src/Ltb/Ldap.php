@@ -145,9 +145,9 @@ final class Ldap {
      * @return string the value of $pwdattribute
      */
     static function get_password_value($ldap, $dn, $pwdattribute): string {
-        $search_userpassword = ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
+        $search_userpassword = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
-            return ldap_get_values($ldap, ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
+            return \Ltb\PhpLDAP::ldap_get_values($ldap, ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
         }
     }
     
@@ -178,7 +178,7 @@ final class Ldap {
             ),
         );
 
-        ldap_modify_batch($ldap, $dn, $modifications);
+        \Ltb\PhpLDAP::ldap_modify_batch($ldap, $dn, $modifications);
         $error_code = ldap_errno($ldap);
         $error_msg = ldap_error($ldap);
         return array($error_code, $error_msg);
@@ -211,16 +211,16 @@ final class Ldap {
         $exop_passwd = FALSE;
         if ( $use_ppolicy_control ) {
             $ctrls = array();
-            $exop_passwd = ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls);
-            $error_code = ldap_errno($ldap);
-            $error_msg = ldap_error($ldap);
+            $exop_passwd = \Ltb\PhpLDAP::ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls);
+            $error_code = \Ltb\PhpLDAP::ldap_errno($ldap);
+            $error_msg = \Ltb\PhpLDAP::ldap_error($ldap);
             if (!$exop_passwd) {
                 $ppolicy_error_code = self::get_ppolicy_error_code($ctrls);
             }
         } else {
-            $exop_passwd = ldap_exop_passwd($ldap, $dn, $oldpassword, $password);
-            $error_code = ldap_errno($ldap);
-            $error_msg = ldap_error($ldap);
+            $exop_passwd = \Ltb\PhpLDAP::ldap_exop_passwd($ldap, $dn, $oldpassword, $password);
+            $error_code = \Ltb\PhpLDAP::ldap_errno($ldap);
+            $error_msg = \Ltb\PhpLDAP::ldap_error($ldap);
         }
         return array($error_code, $error_msg, $ppolicy_error_code);
     }
@@ -237,8 +237,8 @@ final class Ldap {
         $error_msg = "";
         $ctrls = array();
         $ppolicy_error_code = false;
-        $ppolicy_replace = ldap_mod_replace_ext($ldap, $dn, $userdata, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
-        if (ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)) {
+        $ppolicy_replace = \Ltb\PhpLDAP::ldap_mod_replace_ext($ldap, $dn, $userdata, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
+        if (\Ltb\PhpLDAP::ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)) {
             $ppolicy_error_code = self::get_ppolicy_error_code($ctrls);
         }
         return array($error_code, $error_msg, $ppolicy_error_code);
@@ -252,7 +252,7 @@ final class Ldap {
      * @return array 0: error_code, 1: error_msg
      */
     static function modify_attributes($ldap, $dn, $userdata): array {
-        ldap_mod_replace($ldap, $dn, $userdata);
+        \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $userdata);
         $error_code = ldap_errno($ldap);
         $error_msg = ldap_error($ldap);
         return array($error_code, $error_msg);
