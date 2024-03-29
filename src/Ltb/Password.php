@@ -58,7 +58,7 @@ final class Password {
     }
     
     static function check_sha_password($password, $hash): bool {
-        return ($hash === make_sha_password($password));
+        return ($hash === self::make_sha_password($password));
     }
 
     # Create SHA256 password
@@ -67,7 +67,7 @@ final class Password {
     }
     
     static function check_sha256_password($password, $hash): bool {
-        return ($hash === make_sha256_password($password));
+        return ($hash === self::make_sha256_password($password));
     }
 
     # Create SHA384 password
@@ -76,7 +76,7 @@ final class Password {
     }
     
     static function check_sha384_password($password, $hash): bool {
-        return ($hash === make_sha384_password($password));
+        return ($hash === self::make_sha384_password($password));
     }
 
     # Create SHA512 password
@@ -85,7 +85,7 @@ final class Password {
     }
     
     static function check_sha512_password($password, $hash): bool {
-        return ($hash === make_sha512_password($password));
+        return ($hash === self::make_sha512_password($password));
     }
 
     # Create SMD5 password
@@ -106,7 +106,7 @@ final class Password {
     }
     
     static function check_md5_password($password, $hash): bool {
-        return ($hash === make_md5_password($password));
+        return ($hash === self::make_md5_password($password));
     }
 
     # Create CRYPT password
@@ -162,7 +162,7 @@ final class Password {
     }
     
     static function check_md4_password($password, $hash): bool {
-        return ($hash === make_md4_password($password));
+        return ($hash === self::make_md4_password($password));
     }
 
     /**
@@ -177,31 +177,31 @@ final class Password {
             case "clear":
                 return $password;
             case "SSHA":
-                return make_ssha_password($password);
+                return self::make_ssha_password($password);
             case "SSHA256":
-                return make_ssha256_password($password);
+                return self::make_ssha256_password($password);
             case "SSHA384":
-                return make_ssha384_password($password);
+                return self::make_ssha384_password($password);
             case "SSHA512":
-                return make_ssha512_password($password);
+                return self::make_ssha512_password($password);
             case "SHA":
-                return make_sha_password($password);
+                return self::make_sha_password($password);
             case "SHA256":
-                return make_sha256_password($password);
+                return self::make_sha256_password($password);
             case "SHA384":
-                return make_sha384_password($password);
+                return self::make_sha384_password($password);
             case "SHA512":
-                return make_sha512_password($password);
+                return self::make_sha512_password($password);
             case "SMD5":
-                return make_smd5_password($password);
+                return self::make_smd5_password($password);
             case "MD5":
-                return make_md5_password($password);
+                return self::make_md5_password($password);
             case "CRYPT":
-                return make_crypt_password($password, $hash_options);
+                return self::make_crypt_password($password, $hash_options);
             case "ARGON2":
-                return make_argon2_password($password, $hash_options);
+                return self::make_argon2_password($password, $hash_options);
             case "NTLM":
-                return make_md4_password($password);
+                return self::make_md4_password($password);
             default:
                 return $password;
         }
@@ -218,32 +218,35 @@ final class Password {
         switch ($algo) {
             case "clear":
                 return $password == $hash;
+            case "auto":
+                $algo = self::get_hash_type($hash);
+                return self::check_password($password, $hash, $algo);
             case "SSHA":
-                return check_ssha_password($password, $hash);
+                return self::check_ssha_password($password, $hash);
             case "SSHA256":
-                return check_ssha256_password($password, $hash);
+                return self::check_ssha256_password($password, $hash);
             case "SSHA384":
-                return check_ssha384_password($password, $hash);
+                return self::check_ssha384_password($password, $hash);
             case "SSHA512":
-                return check_ssha512_password($password, $hash);
+                return self::check_ssha512_password($password, $hash);
             case "SHA":
-                return check_sha_password($password, $hash);
+                return self::check_sha_password($password, $hash);
             case "SHA256":
-                return check_sha256_password($password, $hash);
+                return self::check_sha256_password($password, $hash);
             case "SHA384":
-                return check_sha384_password($password, $hash);
+                return self::check_sha384_password($password, $hash);
             case "SHA512":
-                return check_sha512_password($password, $hash);
+                return self::check_sha512_password($password, $hash);
             case "SMD5":
-                return check_smd5_password($password, $hash);
+                return self::check_smd5_password($password, $hash);
             case "MD5":
-                return check_md5_password($password, $hash);
+                return self::check_md5_password($password, $hash);
             case "CRYPT":
-                return check_crypt_password($password, $hash);
+                return self::check_crypt_password($password, $hash);
             case "ARGON2":
-                return check_argon2_password($password, $hash);
+                return self::check_argon2_password($password, $hash);
             case "NTLM":
-                return check_md4_password($password, $hash);
+                return self::check_md4_password($password, $hash);
             default:
                 return $password == $hash;
         }
@@ -262,16 +265,16 @@ final class Password {
      * @param string $pwdattribute the attribute where the hash is stored
      * @return string algorithm used with the hash
      */
-    static function get_hash_type($pwdattribute): string {
+    static function get_hash_type($userpassword): string {
         $matches = array();
-        if (isset($userpassword) && preg_match('/^\{(\w+)\}/', $userpassword[0], $matches)) {
+        if (isset($userpassword) && preg_match('/^\{(\w+)\}/', $userpassword, $matches)) {
             return strtoupper($matches[1]);
         }
+        return "";
     }
     
-    static function set_samba_data($userdata, $samba_options, $password): void {
-        $time = time();
-        $userdata["sambaNTPassword"] = make_md4_password($password);
+    static function set_samba_data($userdata, $samba_options, $password, $time): array {
+        $userdata["sambaNTPassword"] = self::make_md4_password($password);
         $userdata["sambaPwdLastSet"] = $time;
         if ( isset($samba_options['min_age']) && $samba_options['min_age'] > 0 ) {
              $userdata["sambaPwdCanChange"] = $time + ( $samba_options['min_age'] * 86400 );
@@ -282,9 +285,10 @@ final class Password {
         if ( isset($samba_options['expire_days']) && $samba_options['expire_days'] > 0 ) {
              $userdata["sambaKickoffTime"] = $time + ( $samba_options['expire_days'] * 86400 );
         }
+        return $userdata;
     }
     
-    static function set_ad_data($userdata, $ad_options, $password): void {
+    static function set_ad_data($userdata, $ad_options, $password): array {
         $userdata["unicodePwd"] = $password;
         if ( $ad_options['force_unlock'] ) {
             $userdata["lockoutTime"] = 0;
@@ -292,10 +296,10 @@ final class Password {
         if ( $ad_options['force_pwd_change'] ) {
             $userdata["pwdLastSet"] = 0;
         }
+        return $userdata;
     }
     
-    static function set_shadow_data($userdata, $shadow_options): void {
-        $time = time();
+    static function set_shadow_data($userdata, $shadow_options, $time): array {
         if ( $shadow_options['update_shadowLastChange'] ) {
             $userdata["shadowLastChange"] = floor($time / 86400);
         }
@@ -307,6 +311,7 @@ final class Password {
               $userdata["shadowExpire"] = $shadow_options['shadow_expire_days'];
             }
         }
+        return $userdata;
     }
 
 }
