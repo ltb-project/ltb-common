@@ -1,0 +1,27 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      uses: php-actions/composer@v6
+      with:
+        php_version: 8.3
+        command: update
+        php_extensions: ldap xdebug
+    - name: PHPUnit Tests for php8.3
+      uses: php-actions/phpunit@v3
+      env:
+        XDEBUG_MODE: coverage
+      with:
+        configuration: phpunit.xml
+        version: latest
+        php_version: 8.3
+        php_extensions: ldap xdebug
+        args: --coverage-text
+
