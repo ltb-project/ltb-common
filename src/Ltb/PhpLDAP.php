@@ -70,31 +70,36 @@ class PhpLDAP {
   {
     return ldap_count_entries($ldap, $result);
   }
-  
-  public static function ldap_modify_batch($ldap, $dn, $modifications)
+
+  public static function ldap_modify_batch(...$args)
   {
-      return ldap_modify_batch($ldap, $dn, $modifications);
+      return ldap_modify_batch(...$args);
   }
-  
-  public static function ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls)
+
+  public static function ldap_exop_passwd(...$args)
   {
-      return ldap_exop_passwd($ldap, $dn, $oldpassword, $password, $ctrls);
+      return ldap_exop_passwd(...$args);
   }
-  
-  public static function ldap_mod_replace_ext($ldap, $dn, $userdata, $ctrls)
+
+  public static function ldap_mod_replace_ext(...$args)
   {
-      return ldap_mod_replace_ext($ldap, $dn, $userdata, $ctrls);
+      return ldap_mod_replace_ext(...$args);
   }
-  
-  public static function ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls)
+
+  public static function ldap_parse_result(...$args)
   {
-      return ldap_parse_result($ldap, $ppolicy_replace, $error_code, $matcheddn, $error_msg, $referrals, $ctrls);
+      return ldap_parse_result(...$args);
   }
-  
-  public static function ldap_mod_replace($ldap, $dn, $userdata)
+
+  public static function ldap_mod_replace(...$args)
   {
-      return ldap_mod_replace($ldap, $dn, $userdata);
+      return ldap_mod_replace(...$args);
   }
-  
+
+  public static function ldap_first_entry($ldap, $entry, $attribute)
+  {
+      return ldap_first_entry($ldap, $entry, $attribute);
+  }
+
 }
 ?>

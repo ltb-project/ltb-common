@@ -3,7 +3,7 @@
 
 final class Ldap {
 
-    # LDAP Functions 
+    # LDAP Functions
 
     static function connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout, $ldap_krb5ccname) {
 
@@ -136,23 +136,24 @@ final class Ldap {
 
         return array($ldap_result,$errno,$entries);
     }
-    
+
     /**
      * Gets the value of the password attribute
-     * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
+     * @param \LDAP\Connection $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
-     * @param type $pwdattribute the Attribute that contains the password
-     * @return string the value of $pwdattribute
+     * @param string $pwdattribute the Attribute that contains the password
+     * @return array|false the values of the password, as returned by ldap_get_values
      */
-    static function get_password_value($ldap, $dn, $pwdattribute): string {
+    static function get_password_values($ldap, $dn, $pwdattribute): array|false {
         $search_userpassword = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
-            return \Ltb\PhpLDAP::ldap_get_values($ldap, ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
+            return \Ltb\PhpLDAP::ldap_get_values($ldap, \Ltb\PhpLDAP::ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
         }
+        return false;
     }
-    
+
     /**
-     * Changes the password of an user while binded as the user in an Active Directory
+     * Changes the password of a user while binded as the user in an Active Directory
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
      * @param string $oldpassword the old password
@@ -163,7 +164,7 @@ final class Ldap {
         # The AD password change procedure is modifying the attribute unicodePwd by
         # first deleting unicodePwd with the old password and them adding it with the
         # the new password
-        $oldpassword_hashed = make_ad_password($oldpassword);
+        $oldpassword_hashed = \Ltb\Password::make_ad_password($oldpassword);
 
         $modifications = array(
             array(
@@ -175,15 +176,15 @@ final class Ldap {
                 "attrib" => "unicodePwd",
                 "modtype" => LDAP_MODIFY_BATCH_ADD,
                 "values" => array($password),
-            ),
+            )
         );
 
         \Ltb\PhpLDAP::ldap_modify_batch($ldap, $dn, $modifications);
-        $error_code = ldap_errno($ldap);
-        $error_msg = ldap_error($ldap);
+        $error_code = \Ltb\PhpLDAP::ldap_errno($ldap);
+        $error_msg = \Ltb\PhpLDAP::ldap_error($ldap);
         return array($error_code, $error_msg);
     }
-    
+
     static protected function get_ppolicy_error_code($ctrls) {
         if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
             $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
@@ -224,17 +225,19 @@ final class Ldap {
         }
         return array($error_code, $error_msg, $ppolicy_error_code);
     }
-    
+
     /**
-     * Changes attributes (and password) using Password Policy Control
+     * Changes attributes (and possibly password) using Password Policy Control
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
-     * @param array $userdata the array, containing the new (hashed) password
+     * @param array $userdata the array, containing the modifications
      * @return array 0: error_code, 1: error_msg, 2: ppolicy_error_code
      */
     static function modify_attributes_using_ppolicy($ldap, $dn, $userdata): array {
         $error_code = "";
         $error_msg = "";
+        $matcheddn = null;
+        $referrals = array();
         $ctrls = array();
         $ppolicy_error_code = false;
         $ppolicy_replace = \Ltb\PhpLDAP::ldap_mod_replace_ext($ldap, $dn, $userdata, [['oid' => LDAP_CONTROL_PASSWORDPOLICYREQUEST]]);
@@ -243,7 +246,7 @@ final class Ldap {
         }
         return array($error_code, $error_msg, $ppolicy_error_code);
     }
-    
+
     /**
      * Changes attributes (and password)
      * @param \LDAP\Connection|array $ldap An LDAP\Connection instance, returned by ldap_connect()
@@ -253,8 +256,8 @@ final class Ldap {
      */
     static function modify_attributes($ldap, $dn, $userdata): array {
         \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $userdata);
-        $error_code = ldap_errno($ldap);
-        $error_msg = ldap_error($ldap);
+        $error_code = \Ltb\PhpLDAP::ldap_errno($ldap);
+        $error_msg = \Ltb\PhpLDAP::ldap_error($ldap);
         return array($error_code, $error_msg);
     }
 

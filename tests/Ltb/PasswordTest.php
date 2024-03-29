@@ -2,10 +2,11 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-/**
- * 
- */
-final class PasswordTest extends \PHPUnit\Framework\TestCase {
+use PHPUnit\Framework\TestCase;
+
+final class PasswordTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
+{
+
     function test_check_hash_algorithms() {
         $originalPassword = 'TestMe123!+*';
 

@@ -1,7 +1,7 @@
 <?php namespace Ltb;
 
 /**
- * 
+ * Password functions
  */
 final class Password {
     # Create SSHA password
@@ -9,7 +9,7 @@ final class Password {
         $salt = random_bytes(4);
         return "{SSHA}" . base64_encode(pack("H*", sha1($password . $salt)) . $salt);
     }
-    
+
     static function check_ssha_password($password, $hash): bool {
         $salt = substr(base64_decode(substr($hash, 6)), 20);
         $hash2 = "{SSHA}" . base64_encode(pack("H*", sha1($password . $salt)) . $salt);
@@ -21,7 +21,7 @@ final class Password {
         $salt = random_bytes(4);
         return "{SSHA256}" . base64_encode(pack("H*", hash('sha256', $password . $salt)) . $salt);
     }
-    
+
     static function check_ssha256_password($password, $hash): bool {
         $salt = substr(base64_decode(substr($hash, 9)), 32);
         $hash2 = "{SSHA256}".base64_encode(hash('sha256', $password.$salt, true).$salt);
@@ -33,7 +33,7 @@ final class Password {
         $salt = random_bytes(4);
         return "{SSHA384}" . base64_encode(pack("H*", hash('sha384', $password . $salt)) . $salt);
     }
-    
+
     static function check_ssha384_password($password, $hash): bool {
         $salt = substr(base64_decode(substr($hash, 9)), 48);
         $hash2 = "{SSHA384}".base64_encode(hash('sha384', $password.$salt, true).$salt);
@@ -45,7 +45,7 @@ final class Password {
         $salt = random_bytes(4);
         return "{SSHA512}" . base64_encode(pack("H*", hash('sha512', $password . $salt)) . $salt);
     }
-    
+
     static function check_ssha512_password($password, $hash): bool {
         $salt = substr(base64_decode(substr($hash, 9)), 64);   //salt of given hash (remove {SSHA512}, decode it, and only the bits after 512/8=64 bits)
         $hash2 = "{SSHA512}".base64_encode(hash('sha512', $password.$salt, true).$salt);
@@ -56,7 +56,7 @@ final class Password {
     static function make_sha_password($password): string {
         return "{SHA}" . base64_encode(pack("H*", sha1($password)));
     }
-    
+
     static function check_sha_password($password, $hash): bool {
         return ($hash === self::make_sha_password($password));
     }
@@ -65,7 +65,7 @@ final class Password {
     static function make_sha256_password($password): string {
         return "{SHA256}" . base64_encode(pack("H*", hash('sha256', $password)));
     }
-    
+
     static function check_sha256_password($password, $hash): bool {
         return ($hash === self::make_sha256_password($password));
     }
@@ -74,7 +74,7 @@ final class Password {
     static function make_sha384_password($password): string {
         return "{SHA384}" . base64_encode(pack("H*", hash('sha384', $password)));
     }
-    
+
     static function check_sha384_password($password, $hash): bool {
         return ($hash === self::make_sha384_password($password));
     }
@@ -83,7 +83,7 @@ final class Password {
     static function make_sha512_password($password): string {
         return "{SHA512}" . base64_encode(pack("H*", hash('sha512', $password)));
     }
-    
+
     static function check_sha512_password($password, $hash): bool {
         return ($hash === self::make_sha512_password($password));
     }
@@ -93,7 +93,7 @@ final class Password {
         $salt = random_bytes(4);
         return "{SMD5}" . base64_encode(pack("H*", md5($password . $salt)) . $salt);
     }
-    
+
     static function check_smd5_password($password, $hash): bool {
         $salt = substr(base64_decode(substr($hash, 6)), 16);
         $hash2 = "{SMD5}" . base64_encode(pack("H*", md5($password . $salt)) . $salt);
@@ -104,7 +104,7 @@ final class Password {
     static function make_md5_password($password): string {
         return "{MD5}" . base64_encode(pack("H*", md5($password)));
     }
-    
+
     static function check_md5_password($password, $hash): bool {
         return ($hash === self::make_md5_password($password));
     }
@@ -134,20 +134,20 @@ final class Password {
 
         return '{CRYPT}' . crypt( $password,  $salt);
     }
-    
+
     static function check_crypt_password($password, $hash): bool {
         return password_verify($password, substr($hash, 7));
     }
 
     # Create ARGON2 password
     static function make_argon2_password($password, $hash_options): string {
-        if (!isset($hash_options['memory_cost'])) { $hash_options['memory_cost'] = 4096; } 
-        if (!isset($hash_options['time_cost'])) { $hash_options['time_cost'] = 3; } 
+        if (!isset($hash_options['memory_cost'])) { $hash_options['memory_cost'] = 4096; }
+        if (!isset($hash_options['time_cost'])) { $hash_options['time_cost'] = 3; }
         if (!isset($hash_options['threads'])) { $hash_options['threads'] = 1; }
 
         return '{ARGON2}' . password_hash($password,PASSWORD_ARGON2I,$hash_options);
     }
-    
+
     static function check_argon2_password($password, $hash): bool {
         return password_verify($password, substr($hash, 8));
     }
@@ -160,7 +160,7 @@ final class Password {
             return strtoupper( bin2hex( mhash( MHASH_MD4, iconv( "UTF-8", "UTF-16LE", $password ) ) ) );
         }
     }
-    
+
     static function check_md4_password($password, $hash): bool {
         return ($hash === self::make_md4_password($password));
     }
@@ -272,7 +272,7 @@ final class Password {
         }
         return "";
     }
-    
+
     static function set_samba_data($userdata, $samba_options, $password, $time): array {
         $userdata["sambaNTPassword"] = self::make_md4_password($password);
         $userdata["sambaPwdLastSet"] = $time;
@@ -287,7 +287,7 @@ final class Password {
         }
         return $userdata;
     }
-    
+
     static function set_ad_data($userdata, $ad_options, $password): array {
         $userdata["unicodePwd"] = $password;
         if ( $ad_options['force_unlock'] ) {
@@ -298,7 +298,7 @@ final class Password {
         }
         return $userdata;
     }
-    
+
     static function set_shadow_data($userdata, $shadow_options, $time): array {
         if ( $shadow_options['update_shadowLastChange'] ) {
             $userdata["shadowLastChange"] = floor($time / 86400);
