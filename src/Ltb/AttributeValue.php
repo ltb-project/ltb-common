@@ -58,11 +58,10 @@ class AttributeValue {
      * Get from ldap entry first value corresponding to $mail_attributes (globally configured)
      * @param $ldap php_ldap connection object
      * @param $entry ldap entry to parse
+     * @param $mail_attributes array containing mail attributes
      * @return mail to use for notification or empty string if not found
      */
-    public static function ldap_get_mail_for_notification($ldap, $entry) {
-        # mail_attibutes are set globally in configuration
-        global $mail_attributes;
+    public static function ldap_get_mail_for_notification($ldap, $entry, $mail_attributes) {
         $mailValue =  \Ltb\AttributeValue::ldap_get_first_available_value($ldap, $entry, $mail_attributes);
         $mail="";
         if ( $mailValue ) {
