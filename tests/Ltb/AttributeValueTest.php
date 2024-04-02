@@ -46,7 +46,7 @@ final class AttributeValueTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
     {
 
         // global variable for ldap_get_mail_for_notification function
-        $GLOBALS['mail_attributes'] = array("mail");
+        $mail_attributes = array("mail");
 
         $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
         $phpLDAPMock->shouldreceive([
@@ -59,7 +59,7 @@ final class AttributeValueTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                     ]);
 
         # Test ldap_get_mail_for_notification
-        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification(null, null);
+        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification(null, null, $mail_attributes);
         $this->assertEquals('test1@domain.com', $mail, "not getting test1@domain.com as mail for notification");
     }
 
@@ -67,7 +67,7 @@ final class AttributeValueTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
     {
 
         // global variable for ldap_get_mail_for_notification function
-        $GLOBALS['mail_attributes'] = array("proxyAddresses");
+        $mail_attributes = array("proxyAddresses");
 
         $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
         $phpLDAPMock->shouldreceive([
@@ -80,7 +80,7 @@ final class AttributeValueTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                     ]);
 
         # Test ldap_get_mail_for_notification
-        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification(null, null);
+        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification(null, null, $mail_attributes);
         $this->assertEquals('test1@domain.com', $mail, "not getting test1@domain.com as proxyAddress for notification");
     }
 

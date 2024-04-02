@@ -1,29 +1,58 @@
 <?php namespace Ltb;
 
 
-final class Ldap {
+class Ldap {
 
-    # LDAP Functions
+    public $ldap_url             = null;
+    public $ldap_starttls        = null;
+    public $ldap_binddn          = null;
+    public $ldap_bindpw          = null;
+    public $ldap_network_timeout = null;
+    public $ldap_user_base       = null;
+    public $ldap_size_limit      = null;
+    public $ldap_krb5ccname      = null;
 
-    static function connect($ldap_url, $ldap_starttls, $ldap_binddn, $ldap_bindpw, $ldap_network_timeout, $ldap_krb5ccname) {
+    public function __construct(
+                          $ldap_url,
+                          $ldap_starttls,
+                          $ldap_binddn,
+                          $ldap_bindpw,
+                          $ldap_network_timeout,
+                          $ldap_user_base,
+                          $ldap_size_limit,
+                          $ldap_krb5ccname
+                      )
+    {
+        $this->ldap_url             = $ldap_url;
+        $this->ldap_starttls        = $ldap_starttls;
+        $this->ldap_binddn          = $ldap_binddn;
+        $this->ldap_bindpw          = $ldap_bindpw;
+        $this->ldap_network_timeout = $ldap_network_timeout;
+        $this->ldap_user_base       = $ldap_user_base;
+        $this->ldap_size_limit      = $ldap_size_limit;
+        $this->ldap_krb5ccname      = $ldap_krb5ccname;
+        
+    }
+
+    function connect() {
 
         # Connect to LDAP
-        $ldap = \Ltb\PhpLDAP::ldap_connect($ldap_url);
+        $ldap = \Ltb\PhpLDAP::ldap_connect($this->ldap_url);
         \Ltb\PhpLDAP::ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
         \Ltb\PhpLDAP::ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
-        if ( isset($ldap_network_timeout) ) {
-            \Ltb\PhpLDAP::ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, $ldap_network_timeout);
+        if ( isset($this->ldap_network_timeout) ) {
+            \Ltb\PhpLDAP::ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, $this->ldap_network_timeout);
         }
 
-        if ( $ldap_starttls && !\Ltb\PhpLDAP::ldap_start_tls($ldap) ) {
+        if ( $this->ldap_starttls && !\Ltb\PhpLDAP::ldap_start_tls($ldap) ) {
             error_log("LDAP - Unable to use StartTLS");
             return array(false, "ldaperror");
         }
 
         # Bind
-        if ( isset($ldap_binddn) && isset($ldap_bindpw) ) {
-            $bind = \Ltb\PhpLDAP::ldap_bind($ldap, $ldap_binddn, $ldap_bindpw);
-        } elseif ( isset($ldap_krb5ccname) ) {
+        if ( isset($this->ldap_binddn) && isset($this->ldap_bindpw) ) {
+            $bind = \Ltb\PhpLDAP::ldap_bind($ldap, $this->ldap_binddn, $this->ldap_bindpw);
+        } elseif ( isset($this->ldap_krb5ccname) ) {
             putenv("KRB5CCNAME=".$ldap_krb5ccname);
             $bind = \Ltb\PhpLDAP::ldap_sasl_bind($ldap, NULL, NULL, 'GSSAPI') or error_log('LDAP - GSSAPI Bind failed');
         } else {
@@ -43,7 +72,65 @@ final class Ldap {
         return array($ldap, false);
     }
 
-    static function get_list($ldap, $ldap_base, $ldap_filter, $key, $value) {
+    function search($ldap_filter,$attributes, $attributes_map, $search_result_title, $search_result_sortby, $search_result_items)
+    {
+
+        $result = "";
+        $nb_entries = 0;
+        $entries = array();
+        $size_limit_reached = false;
+
+        # Connect to LDAP
+        $ldap_connection = $this->connect();
+
+        $ldap = $ldap_connection[0];
+        $result = $ldap_connection[1];
+
+        if ($ldap) {
+
+            foreach( $search_result_items as $item ) {
+                $attributes[] = $attributes_map[$item]['attribute'];
+            }
+            $attributes[] = $attributes_map[$search_result_title]['attribute'];
+            $attributes[] = $attributes_map[$search_result_sortby]['attribute'];
+
+            # Search for users
+            $search = \Ltb\PhpLDAP::ldap_search($ldap, $this->ldap_user_base, $ldap_filter, $attributes, 0, $this->ldap_size_limit);
+
+            $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+            if ( $errno == 4) {
+                $size_limit_reached = true;
+            }
+            if ( $errno != 0 and $errno !=4 ) {
+                $result = "ldaperror";
+                error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
+            } else {
+
+                # Get search results
+                $nb_entries = \Ltb\PhpLDAP::ldap_count_entries($ldap, $search);
+
+                if ($nb_entries === 0) {
+                    $result = "noentriesfound";
+                } else {
+                    $entries = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+
+                    # Sort entries
+                    if (isset($search_result_sortby)) {
+                        $sortby = $attributes_map[$search_result_sortby]['attribute'];
+                        $this->ldapSort($entries, $sortby);
+                    }
+
+                    unset($entries["count"]);
+                }
+            }
+        }
+
+        return [$ldap,$result,$nb_entries,$entries,$size_limit_reached];
+
+    }
+
+    function get_list($ldap, $ldap_base, $ldap_filter, $key, $value) {
 
         $return = array();
 
@@ -70,7 +157,7 @@ final class Ldap {
     }
 
     # if key is not found in attributes, order of entries is preserved
-    static function ldapSort(array &$entries, $key)
+    function ldapSort(array &$entries, $key)
     {
         # 'count' is an additionnal attribute of ldap entries that will be preserved
         # remove it since lost by usort ( changed to integer index )
@@ -96,11 +183,9 @@ final class Ldap {
 
     }
 
-    # not yet fully tested, please use ldapSort directly
-    #
     # ldap_search + ldap_sort combined done at server side if possible
     # if not supported fallback on client sorting.
-    static function sorted_search($ldap, $ldap_base, $ldap_filter, $attributes, $sortby, $ldap_size_limit) {
+    function sorted_search($ldap, $ldap_base, $ldap_filter, $attributes, $sortby, $ldap_size_limit) {
 
         if (isset($sortby) and $sortby)
         {
@@ -127,7 +212,7 @@ final class Ldap {
             if ( $errno === 0 )
             {
                 $entries=\Ltb\PhpLDAP::ldap_get_entries($ldap, $ldap_result);
-                Ldap::ldapSort($entries,$sortby);
+                $this->ldapSort($entries,$sortby);
             }
             else {
                 var_dump($errno);
@@ -144,7 +229,7 @@ final class Ldap {
      * @param string $pwdattribute the Attribute that contains the password
      * @return array|false the values of the password, as returned by ldap_get_values
      */
-    static function get_password_values($ldap, $dn, $pwdattribute): array|false {
+    function get_password_values($ldap, $dn, $pwdattribute): array|false {
         $search_userpassword = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
             return \Ltb\PhpLDAP::ldap_get_values($ldap, \Ltb\PhpLDAP::ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
@@ -160,7 +245,7 @@ final class Ldap {
      * @param string $password the new password
      * @return array [$error_code, $error_msg]
      */
-    static function change_ad_password_as_user($ldap, $dn, $oldpassword, $password): array {
+    function change_ad_password_as_user($ldap, $dn, $oldpassword, $password): array {
         # The AD password change procedure is modifying the attribute unicodePwd by
         # first deleting unicodePwd with the old password and them adding it with the
         # the new password
@@ -185,7 +270,7 @@ final class Ldap {
         return array($error_code, $error_msg);
     }
 
-    static protected function get_ppolicy_error_code($ctrls) {
+    protected function get_ppolicy_error_code($ctrls) {
         if (isset($ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE])) {
             $value = $ctrls[LDAP_CONTROL_PASSWORDPOLICYRESPONSE]['value'];
             if (isset($value['error'])) {
@@ -207,7 +292,7 @@ final class Ldap {
      * @param bool $use_ppolicy_control
      * @return array 0: error_code, 1: error_msg, 2: ppolicy_error_code
      */
-    static function change_password_with_exop($ldap, $dn, $oldpassword, $password, $use_ppolicy_control): array {
+    function change_password_with_exop($ldap, $dn, $oldpassword, $password, $use_ppolicy_control): array {
         $ppolicy_error_code = false;
         $exop_passwd = FALSE;
         if ( $use_ppolicy_control ) {
@@ -233,7 +318,7 @@ final class Ldap {
      * @param array $userdata the array, containing the modifications
      * @return array 0: error_code, 1: error_msg, 2: ppolicy_error_code
      */
-    static function modify_attributes_using_ppolicy($ldap, $dn, $userdata): array {
+    function modify_attributes_using_ppolicy($ldap, $dn, $userdata): array {
         $error_code = "";
         $error_msg = "";
         $matcheddn = null;
@@ -254,7 +339,7 @@ final class Ldap {
      * @param array $userdata the array, containing the new (hashed) password
      * @return array 0: error_code, 1: error_msg
      */
-    static function modify_attributes($ldap, $dn, $userdata): array {
+    function modify_attributes($ldap, $dn, $userdata): array {
         \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $userdata);
         $error_code = \Ltb\PhpLDAP::ldap_errno($ldap);
         $error_msg = \Ltb\PhpLDAP::ldap_error($ldap);

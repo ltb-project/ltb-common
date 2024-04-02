@@ -2,11 +2,40 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
-// global variable for ldap_get_mail_for_notification function
-$GLOBALS['mail_attributes'] = array("mail");
-
 final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 {
+
+    // connection variables
+    public $ldap_url = "ldap://test.my-domain.com";
+    public $ldap_starttls = false;
+    public $ldap_binddn = "cn=test,dc=my-domain,dc=com";
+    public $ldap_bindpw = "secret";
+    public $ldap_network_timeout = 10;
+    public $ldap_user_base = "ou=people,dc=my-domain,dc=com";
+    public $ldap_size_limit = 1000;
+    public $ldap_krb5ccname = null;
+
+    public function test_construct(): void
+    {
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->ldap_url,
+                                         $this->ldap_starttls,
+                                         $this->ldap_binddn,
+                                         $this->ldap_bindpw,
+                                         $this->ldap_network_timeout,
+                                         $this->ldap_user_base,
+                                         $this->ldap_size_limit,
+                                         $this->ldap_krb5ccname
+                                     );
+        $this->assertEquals($this->ldap_url, $ldapInstance->ldap_url, "Error while initializing ldap_url");
+        $this->assertEquals($this->ldap_starttls, $ldapInstance->ldap_starttls, "Error while initializing ldap_starttls");
+        $this->assertEquals($this->ldap_binddn, $ldapInstance->ldap_binddn, "Error while initializing ldap_binddn");
+        $this->assertEquals($this->ldap_bindpw, $ldapInstance->ldap_bindpw, "Error while initializing ldap_bindpw");
+        $this->assertEquals($this->ldap_network_timeout, $ldapInstance->ldap_network_timeout, "Error while initializing ldap_network_timeout");
+        $this->assertEquals($this->ldap_user_base, $ldapInstance->ldap_user_base, "Error while initializing ldap_user_base");
+        $this->assertEquals($this->ldap_size_limit, $ldapInstance->ldap_size_limit, "Error while initializing ldap_size_limit");
+        $this->assertEquals($this->ldap_krb5ccname, $ldapInstance->ldap_krb5ccname, "Error while initializing ldap_krb5ccname");
+    }
 
     public function test_connect(): void
     {
@@ -24,10 +53,162 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with("ldap_connection", "cn=test,dc=my-domain,dc=com","secret")
                     ->andReturn(true);
 
-        list($ldap, $msg) = Ltb\Ldap::connect("ldap://test.my-domain.com", false, "cn=test,dc=my-domain,dc=com", "secret", 10, null);
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->ldap_url,
+                                         $this->ldap_starttls,
+                                         $this->ldap_binddn,
+                                         $this->ldap_bindpw,
+                                         $this->ldap_network_timeout,
+                                         $this->ldap_user_base,
+                                         $this->ldap_size_limit,
+                                         $this->ldap_krb5ccname
+                                     );
+        list($ldap, $msg) = $ldapInstance->connect();
 
         $this->assertNotFalse($ldap, "Error while connecting to LDAP server");
         $this->assertFalse($msg, "Error message returned while connecting to LDAP server");
+    }
+
+
+
+    public function test_search(): void
+    {
+
+        $ldap_filter = "(objectClass=inetOrgPerson)";
+        $attributes = array("cn", "sn");
+        $attributes_map = array(
+            'authtimestamp' => array( 'attribute' => 'authtimestamp', 'faclass' => 'lock', 'type' => 'date' ),
+            'businesscategory' => array( 'attribute' => 'businesscategory', 'faclass' => 'briefcase', 'type' => 'text' ),
+            'carlicense' => array( 'attribute' => 'carlicense', 'faclass' => 'car', 'type' => 'text' ),
+            'created' => array( 'attribute' => 'createtimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'description' => array( 'attribute' => 'description', 'faclass' => 'info-circle', 'type' => 'text' ),
+            'displayname' => array( 'attribute' => 'displayname', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'employeenumber' => array( 'attribute' => 'employeenumber', 'faclass' => 'hashtag', 'type' => 'text' ),
+            'employeetype' => array( 'attribute' => 'employeetype', 'faclass' => 'id-badge', 'type' => 'text' ),
+            'fax' => array( 'attribute' => 'facsimiletelephonenumber', 'faclass' => 'fax', 'type' => 'tel' ),
+            'firstname' => array( 'attribute' => 'givenname', 'faclass' => 'user-o', 'type' => 'text' ),
+            'fullname' => array( 'attribute' => 'cn', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'identifier' => array( 'attribute' => 'uid', 'faclass' => 'user-o', 'type' => 'text' ),
+            'l' => array( 'attribute' => 'l', 'faclass' => 'globe', 'type' => 'text' ),
+            'lastname' => array( 'attribute' => 'sn', 'faclass' => 'user-o', 'type' => 'text' ),
+            'mail' => array( 'attribute' => 'mail', 'faclass' => 'envelope-o', 'type' => 'mailto' ),
+            'mailquota' => array( 'attribute' => 'gosamailquota', 'faclass' => 'pie-chart', 'type' => 'bytes' ),
+            'manager' => array( 'attribute' => 'manager', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'mobile' => array( 'attribute' => 'mobile', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'modified' => array( 'attribute' => 'modifytimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'organization' => array( 'attribute' => 'o', 'faclass' => 'building', 'type' => 'text' ),
+            'organizationalunit' => array( 'attribute' => 'ou', 'faclass' => 'building-o', 'type' => 'text' ),
+            'pager' => array( 'attribute' => 'pager', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'phone' => array( 'attribute' => 'telephonenumber', 'faclass' => 'phone', 'type' => 'tel' ),
+            'postaladdress' => array( 'attribute' => 'postaladdress', 'faclass' => 'map-marker', 'type' => 'address' ),
+            'postalcode' => array( 'attribute' => 'postalcode', 'faclass' => 'globe', 'type' => 'text' ),
+            'pwdaccountlockedtime' => array( 'attribute' => 'pwdaccountlockedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdchangedtime' => array( 'attribute' => 'pwdchangedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdfailuretime' => array( 'attribute' => 'pwdfailuretime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdlastsuccess' => array( 'attribute' => 'pwdlastsuccess', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdreset' => array( 'attribute' => 'pwdreset', 'faclass' => 'lock', 'type' => 'boolean' ),
+            'secretary' => array( 'attribute' => 'secretary', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'state' => array( 'attribute' => 'st', 'faclass' => 'globe', 'type' => 'text' ),
+            'street' => array( 'attribute' => 'street', 'faclass' => 'map-marker', 'type' => 'text' ),
+            'title' => array( 'attribute' => 'title', 'faclass' => 'certificate', 'type' => 'text' ),
+        );
+        $search_result_title = "fullname";
+        $search_result_sortby = "lastname";
+        $search_result_items = array('identifier', 'mail', 'mobile');
+
+
+        $entries = [
+                       'count' => 2,
+                       0 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn1'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'zzzzzz'
+                           ]
+                       ],
+                       1 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn2'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'aaaaaa'
+                           ]
+                       ]
+        ];
+
+        $phpLDAPMock = Mockery::mock('overload:\Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_connect')
+                    ->with($this->ldap_url)
+                    ->andReturn("ldap_connection");
+
+        $phpLDAPMock->shouldreceive('ldap_set_option')
+                    ->andReturn(null);
+
+        $phpLDAPMock->shouldreceive('ldap_bind')
+                    ->with("ldap_connection", $this->ldap_binddn, $this->ldap_bindpw)
+                    ->andReturn(true);
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection",
+                           $this->ldap_user_base,
+                           "(objectClass=inetOrgPerson)",
+                           [0 => 'cn', 1 => 'sn', 2 => 'uid', 3 => 'mail', 4 => 'mobile', 5 => 'cn', 6 => 'sn'],
+                           0,
+                           $this->ldap_size_limit
+                          )
+                    ->andReturn("ldap_search_result");
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with("ldap_connection")
+                    ->andReturn(0);
+
+        $phpLDAPMock->shouldreceive('ldap_count_entries')
+                    ->with("ldap_connection", "ldap_search_result")
+                    ->andReturn(2);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with("ldap_connection","ldap_search_result")
+                    ->andReturn($entries);
+
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->ldap_url,
+                                         $this->ldap_starttls,
+                                         $this->ldap_binddn,
+                                         $this->ldap_bindpw,
+                                         $this->ldap_network_timeout,
+                                         $this->ldap_user_base,
+                                         $this->ldap_size_limit,
+                                         $this->ldap_krb5ccname
+                                     );
+        list($ldap, $msg) = $ldapInstance->connect();
+
+        list($ldap,$result,$nb_entries,$res_entries,$size_limit_reached) = 
+                  $ldapInstance->search( $ldap_filter,
+                                         $attributes,
+                                         $attributes_map,
+                                         $search_result_title,
+                                         $search_result_sortby,
+                                         $search_result_items
+                                       );
+
+        $this->assertEquals("ldap_connection", $ldap, "Error while getting ldap_connection in search function");
+        $this->assertFalse($result, "Error message returned while connecting to LDAP server in search function");
+        $this->assertEquals(2, $nb_entries, "Wrong number of entries returned by search function");
+        $this->assertEquals("testcn2", $res_entries[0]["cn"][0], "Wrong cn received in first entry. Entries may have not been sorted?");
+        $this->assertEquals("testcn1", $res_entries[1]["cn"][0], "Wrong cn received in second entry. Entries may have not been sorted?");
+        $this->assertFalse($size_limit_reached, "Unexpected size limit reached in search function");
     }
 
     public function test_get_list(): void
@@ -75,8 +256,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                     ]
                                 ]);
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         // return hashmap: [ cn_value => sn_value ]
-        $result = Ltb\Ldap::get_list("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn");
+        $result = $ldapInstance->get_list("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn");
 
         $this->assertEquals('testcn1', array_keys($result)[0], "not getting testcn1 as key in get_list function");
         $this->assertEquals('testsn1', $result["testcn1"], "not getting testsn1 as value in get_list function");
@@ -119,7 +301,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
             ]
         ];
 
-        $return = Ltb\Ldap::ldapSort($entries, "sn");
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $return = $ldapInstance->ldapSort($entries, "sn");
 
         $this->assertTrue($return, "Weird value returned by ldapSort function");
         $this->assertEquals('testcn2', $entries[0]['cn'][0], "testcn2 has not been ordered correctly in entries array");
@@ -208,7 +391,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with("ldap_connection")
                     ->andReturn(0);
 
-        list($ldap_result,$errno,$entries) = Ltb\Ldap::sorted_search("ldap_connection",
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search("ldap_connection",
                                                                      "ou=people,dc=my-domain,dc=com",
                                                                      "(objectClass=InetOrgPerson)",
                                                                      ["cn", "sn"],
@@ -302,13 +486,14 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with("ldap_connection")
                     ->andReturn(0);
 
-        list($ldap_result,$errno,$entries) = Ltb\Ldap::sorted_search("ldap_connection",
-                                                                     "ou=people,dc=my-domain,dc=com",
-                                                                     "(objectClass=InetOrgPerson)",
-                                                                     ["cn", "sn"],
-                                                                     "sn",
-                                                                     1000
-                                                                    );
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search("ldap_connection",
+                                                                          "ou=people,dc=my-domain,dc=com",
+                                                                          "(objectClass=InetOrgPerson)",
+                                                                          ["cn", "sn"],
+                                                                          "sn",
+                                                                          1000
+                                                                         );
 
         $this->assertEquals("ldap_search_result", $ldap_result, "error while getting ldap_search sorted result");
         $this->assertEquals(0, $errno, "error code invalid while getting ldap_search sorted result");
@@ -342,11 +527,12 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection, "result_entry", $pwdattribute)
                     ->andReturn($expectedValues);
 
-        $values = Ltb\Ldap::get_password_values(
-                                                  $ldap_connection,
-                                                  $dn,
-                                                  $pwdattribute
-                                              );
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $values = $ldapInstance->get_password_values(
+                                                        $ldap_connection,
+                                                        $dn,
+                                                        $pwdattribute
+                                                    );
 
         $this->assertEquals(1, $values['count'], "error while getting cardinal of password values in get_password_value");
         $this->assertEquals('secret', $values[0], "wrong password value in get_password_value");
@@ -366,11 +552,12 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection, $dn, '(objectClass=*)', [ $pwdattribute ])
                     ->andReturn(false);
 
-        $values = Ltb\Ldap::get_password_values(
-                                                   $ldap_connection,
-                                                   $dn,
-                                                   $pwdattribute
-                                               );
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $values = $ldapInstance->get_password_values(
+                                                        $ldap_connection,
+                                                        $dn,
+                                                        $pwdattribute
+                                                    );
         $this->assertFalse($values, 'Weird returned value in get_password_value while sending dummy $pwdattribute');
 
     }
@@ -423,13 +610,14 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                      ->andReturn($hased_old_password);
 
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg) =
-            Ltb\Ldap::change_ad_password_as_user(
-                                                    $ldap_connection,
-                                                    $dn,
-                                                    $old_password,
-                                                    $new_password
-                                                );
+            $ldapInstance->change_ad_password_as_user(
+                                                         $ldap_connection,
+                                                         $dn,
+                                                         $old_password,
+                                                         $new_password
+                                                     );
 
         $this->assertEquals(0, $error_code, 'Weird error code returned in change_ad_password_as_user');
         $this->assertEquals("ok", $error_msg, 'Weird msg returned in change_ad_password_as_user');
@@ -439,7 +627,7 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     public function test_get_ppolicy_error_code(): void
     {
-        // method get_ppolicy_error_code cannot be tested as it is protected (and Ldap class is final)
+        // method get_ppolicy_error_code cannot be tested as it is protected
 
         $this->assertTrue(method_exists("\Ltb\Ldap",'get_ppolicy_error_code'), 'No method get_ppolicy_error_code in class');
 
@@ -469,14 +657,15 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection)
                     ->andReturn("ok");
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg, $ppolicy_error_code) =
-            Ltb\Ldap::change_password_with_exop(
-                                             $ldap_connection,
-                                             $dn,
-                                             $old_password,
-                                             $new_password,
-                                             $ppolicy
-                                         );
+            $ldapInstance->change_password_with_exop(
+                                                        $ldap_connection,
+                                                        $dn,
+                                                        $old_password,
+                                                        $new_password,
+                                                        $ppolicy
+                                                    );
 
         $this->assertEquals(0, $error_code, 'Weird error code returned in change_password_with_exop');
         $this->assertEquals("ok", $error_msg, 'Weird msg returned in change_password_with_exop');
@@ -508,14 +697,15 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection)
                     ->andReturn("ok");
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg, $ppolicy_error_code) =
-            Ltb\Ldap::change_password_with_exop(
-                                             $ldap_connection,
-                                             $dn,
-                                             $old_password,
-                                             $new_password,
-                                             $ppolicy
-                                         );
+            $ldapInstance->change_password_with_exop(
+                                                        $ldap_connection,
+                                                        $dn,
+                                                        $old_password,
+                                                        $new_password,
+                                                        $ppolicy
+                                                    );
 
         $this->assertEquals(0, $error_code, 'Weird error code returned in change_password_with_exop with policy');
         $this->assertEquals("ok", $error_msg, 'Weird msg returned in change_password_with_exop with policy');
@@ -547,14 +737,15 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection)
                     ->andReturn("Invalid credentials");
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg, $ppolicy_error_code) =
-            Ltb\Ldap::change_password_with_exop(
-                                             $ldap_connection,
-                                             $dn,
-                                             $old_password,
-                                             $new_password,
-                                             $ppolicy
-                                         );
+            $ldapInstance->change_password_with_exop(
+                                                        $ldap_connection,
+                                                        $dn,
+                                                        $old_password,
+                                                        $new_password,
+                                                        $ppolicy
+                                                    );
 
         $this->assertEquals(49, $error_code, 'Weird error code returned in failing change_password_with_exop with policy');
         $this->assertEquals("Invalid credentials", $error_msg, 'Weird msg returned in failing change_password_with_exop with policy');
@@ -586,8 +777,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn($res);
 
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg, $ppolicy_error_code) =
-            Ltb\Ldap::modify_attributes_using_ppolicy(
+            $ldapInstance->modify_attributes_using_ppolicy(
                                              $ldap_connection,
                                              $dn,
                                              $userdata
@@ -625,12 +817,13 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->with($ldap_connection)
                     ->andReturn("ok");
 
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
         list($error_code, $error_msg) =
-            Ltb\Ldap::modify_attributes(
-                                           $ldap_connection,
-                                           $dn,
-                                           $userdata
-                                       );
+            $ldapInstance->modify_attributes(
+                                                $ldap_connection,
+                                                $dn,
+                                                $userdata
+                                            );
 
         $this->assertEquals(0, $error_code, 'Weird error code returned in modify_attributes');
         $this->assertEquals("ok", $error_msg, 'Weird msg returned in modify_attributes');

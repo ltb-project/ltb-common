@@ -4,74 +4,54 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
-final class Mail {
+class Mail extends PHPMailer{
 
     # Mail functions
-    # rely on global mail configured with $mail_XXXX variables
-
-    # init $mailer from config $mail_XXXX variables
-    # legacy code to be compliant with self-service-password existing configuration
-    static function init_mailer()
+    function __construct( $mail_priority,
+                          $mail_charset,
+                          $mail_contenttype,
+                          $mail_wordwrap,
+                          $mail_sendmailpath,
+                          $mail_protocol,
+                          $mail_smtp_debug,
+                          $mail_debug_format,
+                          $mail_smtp_host,
+                          $mail_smtp_port,
+                          $mail_smtp_secure,
+                          $mail_smtp_autotls,
+                          $mail_smtp_auth,
+                          $mail_smtp_user,
+                          $mail_smtp_pass,
+                          $mail_smtp_keepalive,
+                          $mail_smtp_options,
+                          $mail_smtp_timeout
+                        )
     {
+        parent::__construct();
 
-        #==============================================================================
-        # Email Config
-        #==============================================================================
-
-        global $mailer;
-        global $mail_priority,  $mail_charset, $mail_contenttype,  $mail_wordwrap, $mail_sendmailpath;
-        global $mail_protocol,  $mail_smtp_debug, $mail_debug_format, $mail_smtp_host, $mail_smtp_port;
-        global $mail_smtp_secure, $mail_smtp_autotls, $mail_smtp_auth, $mail_smtp_user, $mail_smtp_pass;
-        global $mail_smtp_keepalive, $mail_smtp_options, $mail_smtp_timeout;
-
-        $mailer= new PHPMailer;
-
-        $mailer->Priority      = $mail_priority;
-        $mailer->CharSet       = $mail_charset;
-        $mailer->ContentType   = $mail_contenttype;
-        $mailer->WordWrap      = $mail_wordwrap;
-        $mailer->Sendmail      = $mail_sendmailpath;
-        $mailer->Mailer        = $mail_protocol;
-        $mailer->SMTPDebug     = $mail_smtp_debug;
-        $mailer->Debugoutput   = $mail_debug_format;
-        $mailer->Host          = $mail_smtp_host;
-        $mailer->Port          = $mail_smtp_port;
-        $mailer->SMTPSecure    = $mail_smtp_secure;
-        $mailer->SMTPAutoTLS   = $mail_smtp_autotls;
-        $mailer->SMTPAuth      = $mail_smtp_auth;
-        $mailer->Username      = $mail_smtp_user;
-        $mailer->Password      = $mail_smtp_pass;
-        $mailer->SMTPKeepAlive = $mail_smtp_keepalive;
-        $mailer->SMTPOptions   = $mail_smtp_options;
-        $mailer->Timeout       = $mail_smtp_timeout;
-
-        return $mailer;
+        $this->Priority      = $mail_priority;
+        $this->CharSet       = $mail_charset;
+        $this->ContentType   = $mail_contenttype;
+        $this->WordWrap      = $mail_wordwrap;
+        $this->Sendmail      = $mail_sendmailpath;
+        $this->Mailer        = $mail_protocol;
+        $this->SMTPDebug     = $mail_smtp_debug;
+        $this->Debugoutput   = $mail_debug_format;
+        $this->Host          = $mail_smtp_host;
+        $this->Port          = $mail_smtp_port;
+        $this->SMTPSecure    = $mail_smtp_secure;
+        $this->SMTPAutoTLS   = $mail_smtp_autotls;
+        $this->SMTPAuth      = $mail_smtp_auth;
+        $this->Username      = $mail_smtp_user;
+        $this->Password      = $mail_smtp_pass;
+        $this->SMTPKeepAlive = $mail_smtp_keepalive;
+        $this->SMTPOptions   = $mail_smtp_options;
+        $this->Timeout       = $mail_smtp_timeout;
+ 
     }
 
-    /* @function boolean send_mail_gloabl(PHPMailer $mailer, string $mail, string $mail_from, string $subject, string $body, array $data)
+    /* @function boolean send_mail(string $mail, string $mail_from, string $subject, string $body, array $data)
      * Send a mail, replace strings in body
-     *
-     * use global PHPMailer $mailer, create one from mail_XXX configurations if needed.
-     #
-     * @param mail Destination
-     * @param mail_from Sender
-     * @param subject Subject
-     * @param body Body
-     * @param data Data for string replacement
-     * @return result
-     */
-    static function send_mail_global($mail, $mail_from, $mail_from_name, $subject, $body, $data) {
-        global $mailer;
-        if ( ! isset($mailer) )
-        {
-            \Ltb\Mail::init_mailer();
-        }
-        return \Ltb\Mail::send_mail($mailer, $mail, $mail_from, $mail_from_name, $subject, $body, $data);
-    }
-
-    /* @function boolean send_mail(PHPMailer $mailer, string $mail, string $mail_from, string $subject, string $body, array $data)
-     * Send a mail, replace strings in body
-     * @param mailer PHPMailer object
      * @param mail Destination or array of destinations.
      * @param mail_from Sender
      * @param subject Subject
@@ -79,14 +59,9 @@ final class Mail {
      * @param data Data for string replacement
      * @return result
      */
-    static function send_mail($mailer, $mail, $mail_from, $mail_from_name, $subject, $body, $data) {
+    public function send_mail($mail, $mail_from, $mail_from_name, $subject, $body, $data) {
 
         $result = false;
-
-        if (!is_a($mailer, 'PHPMailer\PHPMailer\PHPMailer')) {
-            error_log("send_mail: PHPMailer object required!");
-            return $result;
-        }
 
         if (!$mail) {
             error_log("send_mail: no mail given, exiting...");
@@ -103,25 +78,25 @@ final class Mail {
         }
 
         # if not done addAddress and addReplyTo are cumulated at each call
-        $mailer->clearAddresses();
-        $mailer->setFrom($mail_from, $mail_from_name);
-        $mailer->addReplyTo($mail_from, $mail_from_name);
+        $this->clearAddresses();
+        $this->setFrom($mail_from, $mail_from_name);
+        $this->addReplyTo($mail_from, $mail_from_name);
         # support list of mails
         if ( is_array($mail) ) {
             foreach( $mail as $mailstr ) {
-                $mailer->addAddress($mailstr);
+                $this->addAddress($mailstr);
             }
         }
         else {
-            $mailer->addAddress($mail);
+            $this->addAddress($mail);
         }
-        $mailer->Subject = $subject;
-        $mailer->Body = $body;
+        $this->Subject = $subject;
+        $this->Body = $body;
 
-        $result = $mailer->send();
+        $result = $this->send();
 
         if (!$result) {
-            error_log("send_mail: ".$mailer->ErrorInfo);
+            error_log("send_mail: ".$this->ErrorInfo);
         }
 
         return $result;
