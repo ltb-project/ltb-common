@@ -227,12 +227,16 @@ class Ldap {
      * @param \LDAP\Connection $ldap An LDAP\Connection instance, returned by ldap_connect()
      * @param string $dn the dn of the user
      * @param string $pwdattribute the Attribute that contains the password
-     * @return array|false the values of the password, as returned by ldap_get_values
+     * @return string|false the first value of the password taken from ldap_get_values
      */
-    function get_password_values($ldap, $dn, $pwdattribute): array|false {
+    function get_password_value($ldap, $dn, $pwdattribute): string|false {
         $search_userpassword = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
-            return \Ltb\PhpLDAP::ldap_get_values($ldap, \Ltb\PhpLDAP::ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
+            $password_values = \Ltb\PhpLDAP::ldap_get_values($ldap, \Ltb\PhpLDAP::ldap_first_entry($ldap, $search_userpassword), $pwdattribute);
+            if(isset($password_values[0]))
+            {
+                return $password_values[0];
+            }
         }
         return false;
     }

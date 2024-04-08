@@ -528,14 +528,13 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn($expectedValues);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
-        $values = $ldapInstance->get_password_values(
-                                                        $ldap_connection,
-                                                        $dn,
-                                                        $pwdattribute
-                                                    );
+        $value = $ldapInstance->get_password_value(
+                                                       $ldap_connection,
+                                                       $dn,
+                                                       $pwdattribute
+                                                  );
 
-        $this->assertEquals(1, $values['count'], "error while getting cardinal of password values in get_password_value");
-        $this->assertEquals('secret', $values[0], "wrong password value in get_password_value");
+        $this->assertEquals('secret', $value, "wrong password value in get_password_value");
 
     }
 
@@ -553,12 +552,12 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn(false);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
-        $values = $ldapInstance->get_password_values(
-                                                        $ldap_connection,
-                                                        $dn,
-                                                        $pwdattribute
-                                                    );
-        $this->assertFalse($values, 'Weird returned value in get_password_value while sending dummy $pwdattribute');
+        $value = $ldapInstance->get_password_value(
+                                                       $ldap_connection,
+                                                       $dn,
+                                                       $pwdattribute
+                                                   );
+        $this->assertFalse($value, 'Weird returned value in get_password_value while sending dummy $pwdattribute');
 
     }
 
