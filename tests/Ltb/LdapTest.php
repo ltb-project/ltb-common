@@ -257,8 +257,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                 ]);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
         // return hashmap: [ cn_value => sn_value ]
-        $result = $ldapInstance->get_list("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn");
+        $result = $ldapInstance->get_list("ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn");
 
         $this->assertEquals('testcn1', array_keys($result)[0], "not getting testcn1 as key in get_list function");
         $this->assertEquals('testsn1', $result["testcn1"], "not getting testsn1 as value in get_list function");
@@ -302,6 +303,7 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         ];
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
         $return = $ldapInstance->ldapSort($entries, "sn");
 
         $this->assertTrue($return, "Weird value returned by ldapSort function");
@@ -392,7 +394,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn(0);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
-        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search("ldap_connection",
+        $ldapInstance->ldap = "ldap_connection";
+        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search(
                                                                      "ou=people,dc=my-domain,dc=com",
                                                                      "(objectClass=InetOrgPerson)",
                                                                      ["cn", "sn"],
@@ -487,7 +490,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn(0);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
-        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search("ldap_connection",
+        $ldapInstance->ldap = "ldap_connection";
+        list($ldap_result,$errno,$entries) = $ldapInstance->sorted_search(
                                                                           "ou=people,dc=my-domain,dc=com",
                                                                           "(objectClass=InetOrgPerson)",
                                                                           ["cn", "sn"],
@@ -528,8 +532,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn($expectedValues);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         $value = $ldapInstance->get_password_value(
-                                                       $ldap_connection,
                                                        $dn,
                                                        $pwdattribute
                                                   );
@@ -552,8 +556,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn(false);
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         $value = $ldapInstance->get_password_value(
-                                                       $ldap_connection,
                                                        $dn,
                                                        $pwdattribute
                                                    );
@@ -610,9 +614,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg) =
             $ldapInstance->change_ad_password_as_user(
-                                                         $ldap_connection,
                                                          $dn,
                                                          $old_password,
                                                          $new_password
@@ -657,9 +661,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn("ok");
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg, $ppolicy_error_code) =
             $ldapInstance->change_password_with_exop(
-                                                        $ldap_connection,
                                                         $dn,
                                                         $old_password,
                                                         $new_password,
@@ -697,9 +701,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn("ok");
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg, $ppolicy_error_code) =
             $ldapInstance->change_password_with_exop(
-                                                        $ldap_connection,
                                                         $dn,
                                                         $old_password,
                                                         $new_password,
@@ -737,9 +741,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn("Invalid credentials");
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg, $ppolicy_error_code) =
             $ldapInstance->change_password_with_exop(
-                                                        $ldap_connection,
                                                         $dn,
                                                         $old_password,
                                                         $new_password,
@@ -777,9 +781,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg, $ppolicy_error_code) =
             $ldapInstance->modify_attributes_using_ppolicy(
-                                             $ldap_connection,
                                              $dn,
                                              $userdata
                                          );
@@ -817,9 +821,9 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                     ->andReturn("ok");
 
         $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
         list($error_code, $error_msg) =
             $ldapInstance->modify_attributes(
-                                                $ldap_connection,
                                                 $dn,
                                                 $userdata
                                             );
