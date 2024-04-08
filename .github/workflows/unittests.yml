@@ -23,5 +23,6 @@ jobs:
         version: latest
         php_version: 8.3
         php_extensions: ldap xdebug
+        test_suffix: Test.php
         args: --coverage-text
 
