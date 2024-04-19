@@ -3,6 +3,8 @@
 [![Latest Stable Version](http://poser.pugx.org/ltb-project/ldap/v)](https://packagist.org/packages/ltb-project/ldap)
 [![Latest Unstable Version](http://poser.pugx.org/ltb-project/ldap/v/unstable)](https://packagist.org/packages/ltb-project/ldap)
 [![Total Downloads](http://poser.pugx.org/ltb-project/ldap/downloads)](https://packagist.org/packages/ltb-project/ldap)
+[![CI Status](https://github.com/ltb-project/ltb-ldap/actions/workflows/unittests.yml/badge.svg)](https://github.com/ltb-project/ltb-ldap/actions/workflows/unittests.yml)
+[![Composer Status](https://github.com/ltb-project/ltb-ldap/actions/workflows/php.yml/badge.svg)](https://github.com/ltb-project/ltb-ldap/actions/workflows/php.yml)
 
 ## Presentation
 
