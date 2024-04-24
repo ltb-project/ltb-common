@@ -100,13 +100,13 @@ final class IntegrationTest extends TestCase
 
         # Test ldap_get_first_available_value
         $ent = Ltb\AttributeValue::ldap_get_first_available_value($ldap, $entry, $this->attributes);
-        $this->assertEquals($ent->attribute, "cn", "not getting attribute cn");
-        $this->assertEquals($ent->value, "test1", "not getting value test1 as cn first value");
+        $this->assertEquals("cn", $ent->attribute, "not getting attribute cn");
+        $this->assertEquals("test1", $ent->value, "not getting value test1 as cn first value");
     }
 
     public function test_ldap_get_mail_for_notification(): void
     {
-        
+        $mail_attributes = array("mail");
 
         $ldap = ldap_connect($this->host);
         ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
@@ -119,15 +119,25 @@ final class IntegrationTest extends TestCase
         $entry = ldap_first_entry($ldap, $sr);
 
         # Test ldap_get_first_available_value
-        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification($ldap, $entry);
-        $this->assertEquals($mail, 'test1@domain.com', "not getting test1@domain.com as mail for notification");
+        $mail = Ltb\AttributeValue::ldap_get_mail_for_notification($ldap, $entry, $mail_attributes);
+        $this->assertEquals('test1@domain.com', $mail, "not getting test1@domain.com as mail for notification");
 
     }
 
     public function test_connect(): void
     {
 
-        list($ldap, $msg) = Ltb\Ldap::connect($this->host, false, $this->managerDN, $this->managerPW, 10, null);
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->host,
+                                         false,
+                                         $this->managerDN,
+                                         $this->managerPW,
+                                         10,
+                                         null,
+                                         null,
+                                         null
+                                     );
+        list($ldap, $msg) = $ldapInstance->connect();
 
         $this->assertNotFalse($ldap, "Error while connecting to LDAP server");
         $this->assertFalse($msg, "Error message returned while connecting to LDAP server");
@@ -136,17 +146,24 @@ final class IntegrationTest extends TestCase
     public function test_get_list(): void
     {
 
-        $ldap = ldap_connect($this->host);
-        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->host,
+                                         false,
+                                         $this->managerDN,
+                                         $this->managerPW,
+                                         10,
+                                         $this->user_branch,
+                                         0,
+                                         null
+                                     );
 
-        // binding to ldap server
-        $ldapbind = ldap_bind($ldap, $this->managerDN, $this->managerPW);
+        list($ldap, $msg) = $ldapInstance->connect();
 
         // return hashmap: [ cn_value => sn_value ]
-        $result = Ltb\Ldap::get_list($ldap, $this->user_branch, "(uid=test)", "cn","sn");
+        $result = $ldapInstance->get_list($this->user_branch, "(uid=test)", "cn","sn");
 
-        $this->assertEquals(array_keys($result)[0], 'test1', "not getting test1 as key in get_list function");
-        $this->assertEquals($result["test1"], 'test', "not getting test as value in get_list function");
+        $this->assertEquals('test1', array_keys($result)[0], "not getting test1 as key in get_list function");
+        $this->assertEquals('test', $result["test1"], "not getting test as value in get_list function");
 
     }
 

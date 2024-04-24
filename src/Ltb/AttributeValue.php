@@ -54,7 +54,7 @@ class AttributeValue {
         return false;
     }
 
-    /** function \Ltb\AttributeValue::ldap_get_mail_for_notification($ldap, $entry) {
+    /** function \Ltb\AttributeValue::ldap_get_mail_for_notification($ldap, $entry, $mail_attributes) {
      * Get from ldap entry first value corresponding to $mail_attributes (globally configured)
      * @param $ldap php_ldap connection object
      * @param $entry ldap entry to parse
