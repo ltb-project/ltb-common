@@ -236,7 +236,7 @@ class Ldap {
      * @param string $pwdattribute the Attribute that contains the password
      * @return string|false the first value of the password taken from ldap_get_values
      */
-    function get_password_value($dn, $pwdattribute): string|false {
+    function get_password_value($dn, $pwdattribute) {
         $search_userpassword = \Ltb\PhpLDAP::ldap_read($this->ldap, $dn, "(objectClass=*)", array($pwdattribute));
         if ($search_userpassword) {
             $password_values = \Ltb\PhpLDAP::ldap_get_values($this->ldap, \Ltb\PhpLDAP::ldap_first_entry($this->ldap, $search_userpassword), $pwdattribute);

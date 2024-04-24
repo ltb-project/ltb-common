@@ -14,7 +14,7 @@
         "phpmailer/phpmailer": "^6.5.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "*",
-        "mockery/mockery": "*"
+        "phpunit/phpunit": ">=8",
+        "mockery/mockery": ">=1.4"
     }
 }
