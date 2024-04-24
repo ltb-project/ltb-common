@@ -17,7 +17,7 @@ Add the dependency in your [composer](https://getcomposer.org/) configuration:
 ```json
 {
     "require": {
-        "ltb-project/ldap": "v0.1"
+        "ltb-project/ldap": "v0.2"
     }
 }
 ```
@@ -39,11 +39,25 @@ require __DIR__ . 'vendor/autoload.php';
 ```php
 $ldap_url = "ldap://ldap.example.com";
 $ldap_starttls = false;
-$dn = "cn=admin,dc=example,dc=com";
-$password = "secret";
+$ldap_binddn = "cn=admin,dc=example,dc=com";
+$ldap_bindpw = "secret";
 $ldap_network_timeout = 3;
+$ldap_user_base = "ou=people,dc=example,dc=com";
+$ldap_size_limit = 1000;                         
+$ldap_krb5ccname = null;
 
-$ldap_connection = \Ltb\Ldap::connect($ldap_url, $ldap_starttls, $dn, $password, $ldap_network_timeout);
+$ldapInstance = new \Ltb\Ldap(                       
+        $this->ldap_url,        
+        $this->ldap_starttls,   
+        $this->ldap_binddn, 
+        $this->ldap_bindpw,
+        $this->ldap_network_timeout,
+        $this->ldap_user_base,
+        $this->ldap_size_limit,
+        $this->ldap_krb5ccname
+);
+
+$ldap_connection = $ldapInstance->connect();
 
 $ldap = $ldap_connection[0];
 $result = $ldap_connection[1];
