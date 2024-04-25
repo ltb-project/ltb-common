@@ -76,7 +76,7 @@ class PhpLDAP {
       return ldap_modify_batch(...$args);
   }
 
-  public static function ldap_exop_passwd(...$args)
+  public static function ldap_exop_passwd(&...$args)
   {
       return ldap_exop_passwd(...$args);
   }
@@ -86,7 +86,7 @@ class PhpLDAP {
       return ldap_mod_replace_ext(...$args);
   }
 
-  public static function ldap_parse_result(...$args)
+  public static function ldap_parse_result(&...$args)
   {
       return ldap_parse_result(...$args);
   }
