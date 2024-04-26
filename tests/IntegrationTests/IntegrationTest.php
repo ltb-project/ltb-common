@@ -15,6 +15,9 @@ final class IntegrationTest extends TestCase
     public $attributes = array("cn");
     public $context = "dc=fusioniam,dc=org";
 
+    public $adminDN = "cn=lemonldapng,ou=dsa,o=admin,dc=fusioniam,dc=org";
+    public $adminPW = "secret";
+
     public $user_branch = "ou=users,o=acme,dc=fusioniam,dc=org";
     public $ldap_entry_dn1 = "uid=test,ou=users,o=acme,dc=fusioniam,dc=org";
     public $ldap_entry1 = [
@@ -23,7 +26,18 @@ final class IntegrationTest extends TestCase
         "sn" => "test",
         "uid" => "test",
         "userPassword" => "secret",
-        "mail" => array("test1@domain.com", "test2@domain.com")
+        "mail" => array("test1@domain.com", "test2@domain.com"),
+        "pwdPolicySubentry" => "cn=ppolicy1,ou=ppolicies,o=acme,dc=fusioniam,dc=org"
+    ];
+    public $ppolicy_branch = "ou=ppolicies,o=acme,dc=fusioniam,dc=org";
+    public $ldap_ppolicy_dn1 = "cn=ppolicy1,ou=ppolicies,o=acme,dc=fusioniam,dc=org";
+    public $ldap_ppolicy1 = [
+        "objectclass" => array("organizationalRole", "pwdPolicy"),
+        "cn" => array("ppolicy1"),
+        "pwdAttribute" => "userPassword",
+        "pwdAllowUserChange" => "TRUE",
+        "pwdInHistory" => "5",
+        "pwdLockout" => "TRUE"
     ];
 
     /*
@@ -49,6 +63,7 @@ final class IntegrationTest extends TestCase
             if( $info["count"] == 0)
             {
                 // if it does not exist, add the entry
+                $r = ldap_add($ldap, $this->ldap_ppolicy_dn1, $this->ldap_ppolicy1);
                 $r = ldap_add($ldap, $this->ldap_entry_dn1, $this->ldap_entry1);
             }
         }
@@ -78,6 +93,7 @@ final class IntegrationTest extends TestCase
             {
                 // if it exists, delete the entry
                 $r = ldap_delete($ldap, $this->ldap_entry_dn1);
+                $r = ldap_delete($ldap, $this->ldap_ppolicy_dn1);
             }
         }
 
@@ -92,7 +108,7 @@ final class IntegrationTest extends TestCase
         ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
 
         // binding to ldap server
-        $ldapbind = ldap_bind($ldap, $this->managerDN, $this->managerPW);
+        $ldapbind = ldap_bind($ldap, $this->adminDN, $this->adminPW);
 
         // search for added entry
         $sr = ldap_search($ldap, $this->ldap_entry_dn1, "(objectClass=*)", $this->attributes);
@@ -112,7 +128,7 @@ final class IntegrationTest extends TestCase
         ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
 
         // binding to ldap server
-        $ldapbind = ldap_bind($ldap, $this->managerDN, $this->managerPW);
+        $ldapbind = ldap_bind($ldap, $this->adminDN, $this->adminPW);
 
         // search for added entry
         $sr = ldap_search($ldap, $this->ldap_entry_dn1, "(objectClass=*)", $GLOBALS['mail_attributes']);
@@ -130,8 +146,8 @@ final class IntegrationTest extends TestCase
         $ldapInstance = new \Ltb\Ldap(
                                          $this->host,
                                          false,
-                                         $this->managerDN,
-                                         $this->managerPW,
+                                         $this->adminDN,
+                                         $this->adminPW,
                                          10,
                                          null,
                                          null,
@@ -149,8 +165,8 @@ final class IntegrationTest extends TestCase
         $ldapInstance = new \Ltb\Ldap(
                                          $this->host,
                                          false,
-                                         $this->managerDN,
-                                         $this->managerPW,
+                                         $this->adminDN,
+                                         $this->adminPW,
                                          10,
                                          $this->user_branch,
                                          0,
@@ -164,6 +180,55 @@ final class IntegrationTest extends TestCase
 
         $this->assertEquals('test1', array_keys($result)[0], "not getting test1 as key in get_list function");
         $this->assertEquals('test', $result["test1"], "not getting test as value in get_list function");
+
+    }
+
+    public function test_modify_attributes_using_ppolicy_failure(): void
+    {
+
+        $userdata1 = [ # first modification => accepted
+                       "userPassword" => "secret2",
+                     ];
+        $userdata2 = [ # second modification => refused because already present in history
+                       "userPassword" => "secret",
+                     ];
+
+
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->host,
+                                         false,
+                                         $this->adminDN,
+                                         $this->adminPW,
+                                         10,
+                                         $this->user_branch,
+                                         0,
+                                         null
+                                     );
+
+        list($ldap, $msg) = $ldapInstance->connect();
+
+
+        # Modify the password a first time
+        list($error_code, $error_msg, $ppolicy_error_code) =
+            $ldapInstance->modify_attributes_using_ppolicy(
+                                             $this->ldap_entry_dn1,
+                                             $userdata1
+                                         );
+
+        $this->assertEquals(0, $error_code, 'Weird error code returned while modifying userPassword');
+        $this->assertEquals('', $error_msg, 'Weird msg returned while modifying userPassword');
+        $this->assertFalse($ppolicy_error_code, 'Weird ppolicy_error_code returned while modifying userPassword');
+
+        # Modify the password a second time with failure
+        list($error_code, $error_msg, $ppolicy_error_code) =
+            $ldapInstance->modify_attributes_using_ppolicy(
+                                             $this->ldap_entry_dn1,
+                                             $userdata2
+                                         );
+
+        $this->assertEquals(19, $error_code, 'Weird error code returned in modify_attributes_using_ppolicy with failure');
+        $this->assertEquals('Password is in history of old passwords', $error_msg, 'Weird msg returned in modify_attributes_using_ppolicy with failure');
+        $this->assertEquals(8, $ppolicy_error_code, 'Weird ppolicy_error_code returned in modify_attributes_using_ppolicy with failure');
 
     }
 
