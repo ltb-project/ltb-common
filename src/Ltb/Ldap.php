@@ -89,7 +89,7 @@ class Ldap {
     # - int $timelimit = -1,
     # - int $deref = LDAP_DEREF_NEVER,
     # - ?array $controls = null
-    function search_with_scope(string $scope = "sub", ...$searchargs): LDAP\Result|array|false
+    function search_with_scope(string $scope = "sub", ...$searchargs)
     {
         switch($scope)
         {
