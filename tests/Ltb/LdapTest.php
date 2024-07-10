@@ -296,6 +296,7 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $this->assertEquals(array('ldap_search_result'), $result_search, "function ldap_search not correctly called");
         $this->assertEquals(array('ldap_list_result'), $result_list, "function ldap_list not correctly called");
+        $this->assertEquals(array('ldap_read_result'), $result_read, "function ldap_list not correctly called");
         $this->assertFalse($result_unknown, "weird return code in function ldap_read for scope=unknown");
 
     }
