@@ -77,6 +77,34 @@ class Ldap {
         return array($ldap, false);
     }
 
+    # Function that call ldap_search, ldap_read, or ldap_list
+    # depending on the given scope
+    # Expected arguments: scope + same list as ldap_search without ldap connection
+    # - string $scope
+    # - array|string $base,
+    # - array|string $filter,
+    # - array $attributes = [],
+    # - int $attributes_only = 0,
+    # - int $sizelimit = -1,
+    # - int $timelimit = -1,
+    # - int $deref = LDAP_DEREF_NEVER,
+    # - ?array $controls = null
+    function search_with_scope(string $scope = "sub", ...$searchargs): LDAP\Result|array|false
+    {
+        switch($scope)
+        {
+            case "sub":
+                return \Ltb\PhpLDAP::ldap_search($this->ldap, ...$searchargs);
+            case "one":
+                return \Ltb\PhpLDAP::ldap_list($this->ldap, ...$searchargs);
+            case "base":
+                return \Ltb\PhpLDAP::ldap_read($this->ldap, ...$searchargs);
+            default:
+                error_log("search_with_scope: invalid scope $scope");
+                return false;
+        }
+    }
+
     function search($ldap_filter,$attributes, $attributes_map, $search_result_title, $search_result_sortby, $search_result_items)
     {
 
