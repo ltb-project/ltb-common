@@ -259,21 +259,31 @@ class Ldap {
     }
 
     /**
-     * Gets the value of the password attribute
+     * Gets the value of the LDAP attribute
      * @param string $dn the dn of the user
-     * @param string $pwdattribute the Attribute that contains the password
-     * @return string|false the first value of the password taken from ldap_get_values
+     * @param string $attribute the LDAP attribute
+     * @return array|false the array containing attribute values
      */
-    function get_password_value($dn, $pwdattribute) {
-        $search_userpassword = \Ltb\PhpLDAP::ldap_read($this->ldap, $dn, "(objectClass=*)", array($pwdattribute));
-        if ($search_userpassword) {
-            $password_values = \Ltb\PhpLDAP::ldap_get_values($this->ldap, \Ltb\PhpLDAP::ldap_first_entry($this->ldap, $search_userpassword), $pwdattribute);
-            if(isset($password_values[0]))
-            {
-                return $password_values[0];
-            }
+    function get_attribute_values($dn, $attribute) {
+        $search = \Ltb\PhpLDAP::ldap_read($this->ldap, $dn, "(objectClass=*)", array($attribute));
+        if ($search) {
+            return \Ltb\PhpLDAP::ldap_get_values($this->ldap, \Ltb\PhpLDAP::ldap_first_entry($this->ldap, $search), $attribute);
         }
         return false;
+    }
+
+    /*
+    * Gets the value of the password attribute
+    * @param string $dn the dn of the user
+    * @param string $pwdattribute the Attribute that contains the password
+    * @return array|false the array containing attribute values
+    */
+    function get_password_value($dn, $pwdattribute) {
+        $password_values = $this->get_attribute_values($dn, $pwdattribute);
+        if(isset($password_values[0])) {
+            return $password_values[0];
+        }
+       return false;
     }
 
     /**
