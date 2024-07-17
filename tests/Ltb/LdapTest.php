@@ -542,6 +542,42 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
+    public function test_get_attribute_values(): void
+    {
+
+        $ldap_connection = "ldap_connection";
+        $dn = "uid=test,ou=people,dc=my-domain,dc=com";
+        $pwdhistory = "pwdHistory";
+        $expectedValues = [
+                              "count" => 2,
+			      0 => 'secret',
+			      1 => 'testpassword'
+                          ];
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap_connection, $dn, '(objectClass=*)', [ $pwdhistory ])
+                    ->andReturn("ldap_result");
+
+        $phpLDAPMock->shouldreceive('ldap_first_entry')
+                    ->with($ldap_connection, "ldap_result")
+                    ->andReturn("result_entry");
+
+        $phpLDAPMock->shouldreceive('ldap_get_values')
+                    ->with($ldap_connection, "result_entry", $pwdhistory)
+                    ->andReturn($expectedValues);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
+        $value = $ldapInstance->get_attribute_values(
+                                                       $dn,
+                                                       $pwdhistory
+                                                  );
+
+        $this->assertEquals(["count" => 2, 'secret', 'testpassword'] , $value, "incorrect array of attribute values returned by get_attribute_values");
+    }
+
     public function test_get_password_value(): void
     {
 
