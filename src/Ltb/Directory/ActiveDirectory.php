@@ -2,7 +2,7 @@
 
 namespace Ltb\Directory;
 
-class ActiveDirectory implements Directory
+class ActiveDirectory implements \Ltb\Directory
 {
     public function isLocked($entry, $ppolicy) {
 

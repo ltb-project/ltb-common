@@ -2,7 +2,7 @@
 
 namespace Ltb\Directory;
 
-class OpenLDAP implements Directory
+class OpenLDAP implements \Ltb\Directory
 {
     public function isLocked($entry, $ppolicy) {
 
