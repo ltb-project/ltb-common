@@ -4,5 +4,5 @@ namespace Ltb;
 
 interface Directory
 {
-    public function isLocked($entry, $ppolicy);
+    public function isLocked($ldap, $dn, $config);
 }
