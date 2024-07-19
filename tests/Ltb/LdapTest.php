@@ -269,6 +269,39 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
+    public function test_search_with_scope(): void
+    {
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn", "sn"))
+                    ->andReturn(array("ldap_search_result"));
+
+        $phpLDAPMock->shouldreceive('ldap_list')
+                    ->with("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn", "sn"))
+                    ->andReturn(array("ldap_list_result"));
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn", "sn"))
+                    ->andReturn(array("ldap_read_result"));
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+
+        $result_search = $ldapInstance->search_with_scope("sub", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn","sn"));
+        $result_list = $ldapInstance->search_with_scope("one", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn","sn"));
+        $result_read = $ldapInstance->search_with_scope("base", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn","sn"));
+        $result_unknown = $ldapInstance->search_with_scope("unknown", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn","sn"));
+
+        $this->assertEquals(array('ldap_search_result'), $result_search, "function ldap_search not correctly called");
+        $this->assertEquals(array('ldap_list_result'), $result_list, "function ldap_list not correctly called");
+        $this->assertEquals(array('ldap_read_result'), $result_read, "function ldap_list not correctly called");
+        $this->assertFalse($result_unknown, "weird return code in function ldap_read for scope=unknown");
+
+    }
+
+
     public function test_ldapSort(): void
     {
 
@@ -830,6 +863,102 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $this->assertEquals(0, $error_code, 'Weird error code returned in modify_attributes');
         $this->assertEquals("ok", $error_msg, 'Weird msg returned in modify_attributes');
+
+    }
+
+    public function test_get_first_value(): void
+    {
+
+        $ldap_connection = "ldap_connection";
+        $ldap_base = "uid=test,ou=people,dc=my-domain,dc=com";
+        $ldap_scope = "base";
+        $ldap_filter = '(objectClass=inetOrgPerson)';
+        $attribute = "mail,cn";
+        $search_result = "search_result";
+        $entries = [
+                       'count' => 2,
+                       0 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn1'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'zzzzzz'
+                           ]
+                       ],
+                       1 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn2'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'aaaaaa'
+                           ]
+                       ]
+        ];
+
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap_connection, $ldap_base, $ldap_filter, explode(",", $attribute))
+                    ->andReturn($search_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap_connection)
+                    ->andReturn(0);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with($ldap_connection, $search_result)
+                    ->andReturn($entries);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
+        $value = $ldapInstance->get_first_value($ldap_base, $ldap_scope, $ldap_filter, $attribute);
+
+        $this->assertEquals("testcn1", $value, 'Weird value returned by get_first_value method');
+
+    }
+
+    public function test_get_first_value_error(): void
+    {
+
+        $ldap_connection = "ldap_connection";
+        $ldap_base = "DUMMY";
+        $ldap_scope = "base";
+        $ldap_filter = '(objectClass=inetOrgPerson)';
+        $attribute = "mail,cn";
+        $search_result = "search_result";
+        $errno = 34;
+        $error_msg = "invalidDNSyntax";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap_connection, $ldap_base, $ldap_filter, explode(",", $attribute))
+                    ->andReturn($search_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap_connection)
+                    ->andReturn($errno);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap_connection)
+                    ->andReturn($error_msg);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
+        $value = $ldapInstance->get_first_value($ldap_base, $ldap_scope, $ldap_filter, $attribute);
+
+        $this->assertEquals("", $value, 'Weird value returned by get_first_value method called with an invalid DN');
 
     }
 

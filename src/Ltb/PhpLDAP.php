@@ -66,6 +66,11 @@ class PhpLDAP {
     return ldap_read(...$args);
   }
 
+  public static function ldap_list(...$args)
+  {
+    return ldap_list(...$args);
+  }
+
   public static function ldap_count_entries($ldap, $result)
   {
     return ldap_count_entries($ldap, $result);

@@ -35,7 +35,7 @@ class Ldap {
         $this->ldap_user_base       = $ldap_user_base;
         $this->ldap_size_limit      = $ldap_size_limit;
         $this->ldap_krb5ccname      = $ldap_krb5ccname;
-        
+
     }
 
     function connect() {
@@ -75,6 +75,34 @@ class Ldap {
 
         $this->ldap = $ldap;
         return array($ldap, false);
+    }
+
+    # Function that call ldap_search, ldap_read, or ldap_list
+    # depending on the given scope
+    # Expected arguments: scope + same list as ldap_search without ldap connection
+    # - string $scope
+    # - array|string $base,
+    # - array|string $filter,
+    # - array $attributes = [],
+    # - int $attributes_only = 0,
+    # - int $sizelimit = -1,
+    # - int $timelimit = -1,
+    # - int $deref = LDAP_DEREF_NEVER,
+    # - ?array $controls = null
+    function search_with_scope(string $scope = "sub", ...$searchargs)
+    {
+        switch($scope)
+        {
+            case "sub":
+                return \Ltb\PhpLDAP::ldap_search($this->ldap, ...$searchargs);
+            case "one":
+                return \Ltb\PhpLDAP::ldap_list($this->ldap, ...$searchargs);
+            case "base":
+                return \Ltb\PhpLDAP::ldap_read($this->ldap, ...$searchargs);
+            default:
+                error_log("search_with_scope: invalid scope $scope");
+                return false;
+        }
     }
 
     function search($ldap_filter,$attributes, $attributes_map, $search_result_title, $search_result_sortby, $search_result_items)
@@ -364,6 +392,44 @@ class Ldap {
             7 => "tooyoung",
             8 => "inhistory"
         ];
+
+    /**
+     * get the first value of the first attribute in the first entry found
+     * @param string $ldap_base: the base search
+     * @param string $ldap_scope: the scope for the search
+     * @param string $ldap_filter: the filter for searching the entry
+     * @param string $attribute: a list of attributes, separated by ","
+     * @return string: the first value of the first attribute found in the first entry
+     */
+    function get_first_value($ldap_base, $ldap_scope, $ldap_filter, $attribute): string {
+
+        $value = "";
+
+        if ($this->ldap) {
+
+            # Search entry
+            $search = $this->search_with_scope($ldap_scope, $ldap_base, $ldap_filter, explode(",", $attribute));
+
+            $errno = \Ltb\PhpLDAP::ldap_errno($this->ldap);
+
+            if ( $errno ) {
+                error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($this->ldap).")");
+            } else {
+                $entry = \Ltb\PhpLDAP::ldap_get_entries($this->ldap, $search);
+
+                # Loop over attribute
+                foreach ( explode(",", $attribute) as $ldap_attribute ) {
+                    if ( isset ($entry[0][$ldap_attribute]) ) {
+                         $value = $entry[0][$ldap_attribute][0];
+                         break;
+                    }
+                }
+            }
+        }
+
+        return $value;
+
+    }
 
 }
 ?>

@@ -1,5 +1,5 @@
 {
-    "name": "ltb-project/ldap",
+    "name": "ltb-project/ltb-common",
     "description": "PHP framework for LTB project applications",
     "license": "GPL-3.0-or-later",
     "autoload": {
