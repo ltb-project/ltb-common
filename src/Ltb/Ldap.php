@@ -105,7 +105,7 @@ class Ldap {
         }
     }
 
-    function search($ldap_filter,$attributes, $attributes_map, $search_result_title, $search_result_sortby, $search_result_items)
+    function search($ldap_filter,$attributes, $attributes_map, $search_result_title, $search_result_sortby, $search_result_items, $search_scope = "sub")
     {
 
         $result = "";
@@ -115,11 +115,9 @@ class Ldap {
 
         # Connect to LDAP
         $ldap_connection = $this->connect();
-
-        $ldap = $ldap_connection[0];
         $result = $ldap_connection[1];
 
-        if ($ldap) {
+        if ($this->ldap) {
 
             foreach( $search_result_items as $item ) {
                 $attributes[] = $attributes_map[$item]['attribute'];
@@ -128,25 +126,25 @@ class Ldap {
             $attributes[] = $attributes_map[$search_result_sortby]['attribute'];
 
             # Search for users
-            $search = \Ltb\PhpLDAP::ldap_search($ldap, $this->ldap_user_base, $ldap_filter, $attributes, 0, $this->ldap_size_limit);
+            $search = $this->search_with_scope($search_scope, $this->ldap_user_base, $ldap_filter, $attributes, 0, $this->ldap_size_limit);
 
-            $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+            $errno = \Ltb\PhpLDAP::ldap_errno($this->ldap);
 
             if ( $errno == 4) {
                 $size_limit_reached = true;
             }
             if ( $errno != 0 and $errno !=4 ) {
                 $result = "ldaperror";
-                error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
+                error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($this->ldap).")");
             } else {
 
                 # Get search results
-                $nb_entries = \Ltb\PhpLDAP::ldap_count_entries($ldap, $search);
+                $nb_entries = \Ltb\PhpLDAP::ldap_count_entries($this->ldap, $search);
 
                 if ($nb_entries === 0) {
                     $result = "noentriesfound";
                 } else {
-                    $entries = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+                    $entries = \Ltb\PhpLDAP::ldap_get_entries($this->ldap, $search);
 
                     # Sort entries
                     if (isset($search_result_sortby)) {
@@ -159,7 +157,7 @@ class Ldap {
             }
         }
 
-        return [$ldap,$result,$nb_entries,$entries,$size_limit_reached];
+        return [$this->ldap,$result,$nb_entries,$entries,$size_limit_reached];
 
     }
 

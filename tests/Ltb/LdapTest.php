@@ -115,7 +115,7 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $search_result_title = "fullname";
         $search_result_sortby = "lastname";
         $search_result_items = array('identifier', 'mail', 'mobile');
-
+        $search_scope = "sub";
 
         $entries = [
                        'count' => 2,
@@ -200,7 +200,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                          $attributes_map,
                                          $search_result_title,
                                          $search_result_sortby,
-                                         $search_result_items
+                                         $search_result_items,
+                                         $search_scope
                                        );
 
         $this->assertEquals("ldap_connection", $ldap, "Error while getting ldap_connection in search function");
