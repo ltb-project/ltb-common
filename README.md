@@ -17,7 +17,7 @@ Add the dependency in your [composer](https://getcomposer.org/) configuration:
 ```json
 {
     "require": {
-        "ltb-project/ltb-common": "v0.2"
+        "ltb-project/ltb-common": "v0.2.1"
     }
 }
 ```
