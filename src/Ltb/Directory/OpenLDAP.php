@@ -39,8 +39,7 @@ class OpenLDAP implements \Ltb\Directory
             $isLocked = true;
         } else if (isset($pwdAccountLockedTime)) {
             if (isset($pwdLockoutDuration) and ($pwdLockoutDuration > 0)) {
-                // $lockDate = ldapDate2phpDate($pwdAccountLockedTime);
-                $lockdate = time() // TODO add Date functions in LTB-LDAP
+                $lockDate = \Ltb\Date::ldapDate2phpDate($pwdAccountLockedTime);
                 $unlockDate = date_add( $lockDate, new DateInterval('PT'.$pwdLockoutDuration.'S'));
                 if ( time() <= $unlockDate->getTimestamp() ) {
                     $isLocked = true;
