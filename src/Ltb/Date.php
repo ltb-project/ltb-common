@@ -1,4 +1,5 @@
 <?php namespace Ltb;
+use \DateTime;
 
 /**
  * Date functions
@@ -76,7 +77,9 @@ final class Date {
     static function adDate2phpDate($string) {
         $winSecs = (int)($string / 10000000); // divide by 10 000 000 to get seconds
         $unixTimestamp = ($winSecs - 11644473600); // 1.1.1600 -> 1.1.1970 difference in seconds
-        return date(DateTime::RFC822, $unixTimestamp);
+        $date = new DateTime();
+        $date->setTimestamp($unixTimestamp);
+        return $date;
     }
 
 }
