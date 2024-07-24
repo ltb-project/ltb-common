@@ -172,4 +172,24 @@ class ActiveDirectory implements \Ltb\Directory
         return $config['pwdMaxAge'];
     }
 
+    public function modifyPassword($ldap, $dn, $password, $forceReset) : bool {
+
+        $adPassword = \Ltb\Password::make_ad_password($password);
+        $changes = array('unicodePwd' => $adPassword);
+
+        if ($forceReset) {
+            $changes['pwdLastSet'] = 0;
+        }
+
+        $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $changes);
+        $errno = ldap_errno($ldap);
+
+        if ($errno) {
+            error_log("LDAP - Modify password error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
+
+    }
 }

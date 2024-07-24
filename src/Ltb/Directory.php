@@ -50,4 +50,9 @@ interface Directory
      * Date when password will be expired
      */
     public function getPasswordExpirationDate($ldap, $dn, $config) : ?DateTime;
+
+    /*
+     * Modify the password
+     */
+    public function modifyPassword($ldap, $dn, $password, $forceReset) : bool;
 }

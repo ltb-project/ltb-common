@@ -243,4 +243,23 @@ class OpenLDAP implements \Ltb\Directory
 
         return $pwdMaxAge;
     }
+
+    public function modifyPassword($ldap, $dn, $password, $forceReset) : bool {
+
+        $changes = array('userPassword' => $password);
+
+        if ($forceReset) {
+            $changes['pwdReset'] = 'TRUE';
+        }
+
+        $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $changes);
+        $errno = ldap_errno($ldap);
+
+        if ($errno) {
+            error_log("LDAP - Modify password error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
