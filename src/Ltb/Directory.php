@@ -24,4 +24,19 @@ interface Directory
      * Can account be locked?
      */
     public function canLockAccount($ldap, $dn, $config) : bool;
+
+    /*
+     * Is password expired?
+     */
+    public function isPasswordExpired($ldap, $dn, $config) : bool;
+
+    /*
+     * Password max age (in seconds)
+     */
+    public function getPasswordMaxAge($ldap, $dn, $config) : ?int;
+
+    /*
+     * Date when password will be expired
+     */
+    public function getPasswordExpirationDate($ldap, $dn, $config) : ?DateTime;
 }

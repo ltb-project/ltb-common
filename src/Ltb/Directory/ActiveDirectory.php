@@ -77,4 +77,78 @@ class ActiveDirectory implements \Ltb\Directory
     public function canLockAccount($ldap, $dn, $config) : bool {
         return true;
     }
+
+    public function isPasswordExpired($ldap, $dn, $config) : bool {
+
+        # Get entry
+        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
+        $errno = ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = ldap_get_entries($ldap, $search);
+
+        }
+
+        # Get pwdLastSet
+        $pwdLastSet = $entry[0]['pwdlastset'][0];
+
+        if (!$pwdLastSet) {
+            return false;
+        }
+
+        # Get password expiration date
+        $expirationDate = $this->getPasswordExpirationDate($ldap, $dn, $config);
+
+        if (!$expirationDate) {
+            return false;
+        }
+
+        if ($expirationDate and time() >= $expirationDate->getTimestamp()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function getPasswordExpirationDate($ldap, $dn, $config) : ?DateTime {
+
+        $expirationDate = NULL;
+
+        # Get entry
+        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
+        $errno = ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return $expirationDate;
+        } else {
+            $entry = ldap_get_entries($ldap, $search);
+        }
+
+        # Get pwdLastSet
+        $pwdLastSet = $entry[0]['pwdlastset'][0];
+
+        if ( !$pwdLastSet or $pwdLastSet == 0) {
+            return $expirationDate;
+        }
+
+        # Get pwdMaxAge
+        $pwdMaxAge = $config["pwdMaxAge"];
+
+        # Compute expiration date
+        if ($pwdMaxAge) {
+            $adExpirationDate = $pwdLastSet + ($pwdMaxAge * 10000000);
+            $expirationDate = \Ltb\Date::adDate2phpDate($adExpirationDate);
+        }
+
+        return $expirationDate;
+    }
+
+    public function getPasswordMaxAge($ldap, $dn, $config) : ?int {
+        return $config['pwdMaxAge'];
+    }
+
 }

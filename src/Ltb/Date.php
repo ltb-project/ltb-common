@@ -1,5 +1,6 @@
 <?php namespace Ltb;
 use \DateTime;
+use \DateTimeZone;
 
 /**
  * Date functions
