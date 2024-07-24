@@ -83,4 +83,9 @@ final class Date {
         return $date;
     }
 
+    static function timestamp2adDate($string) {
+        $adDate = ((int)$string + 11644473600) * 10000000;
+        return $adDate;
+    }
+
 }
