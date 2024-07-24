@@ -55,4 +55,9 @@ interface Directory
      * Modify the password
      */
     public function modifyPassword($ldap, $dn, $password, $forceReset) : bool;
+
+    /*
+     * Should user reset password at next connection?
+     */
+    public function resetAtNextConnection($ldap, $dn) : bool;
 }

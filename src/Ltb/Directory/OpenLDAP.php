@@ -262,4 +262,24 @@ class OpenLDAP implements \Ltb\Directory
             return true;
         }
     }
+
+    public function resetAtNextConnection($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdreset'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return $expirationDate;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ($entry[0]['pwdreset'] and $entry[0]['pwdreset'][0] === "TRUE") {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
