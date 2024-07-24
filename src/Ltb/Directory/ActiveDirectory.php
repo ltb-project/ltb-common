@@ -8,14 +8,14 @@ class ActiveDirectory implements \Ltb\Directory
     public function isLocked($ldap, $dn, $config) : bool {
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return false;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
 
         }
 
@@ -41,14 +41,14 @@ class ActiveDirectory implements \Ltb\Directory
         $unlockDate = NULL;
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $unlockDate;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
         # Get lockoutTime
@@ -81,14 +81,14 @@ class ActiveDirectory implements \Ltb\Directory
     public function isPasswordExpired($ldap, $dn, $config) : bool {
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return false;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
 
         }
 
@@ -118,14 +118,14 @@ class ActiveDirectory implements \Ltb\Directory
         $expirationDate = NULL;
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $expirationDate;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
         # Get pwdLastSet

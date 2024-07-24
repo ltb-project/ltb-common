@@ -9,14 +9,14 @@ class OpenLDAP implements \Ltb\Directory
     public function isLocked($ldap, $dn, $config) : bool {
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return false;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
         # Get pwdAccountLockedTime
@@ -44,14 +44,14 @@ class OpenLDAP implements \Ltb\Directory
         $unlockDate = NULL;
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $unlockDate;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
         # Get pwdAccountLockedTime
@@ -84,14 +84,14 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Else get password policy configuration
-        $ppolicy_search = ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdlockout', 'pwdlockoutduration'));
-        $errno = ldap_errno($ldap);
+        $ppolicy_search = \Ltb\PhpLDAP::ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdlockout', 'pwdlockoutduration'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $lockoutDuration;
         } else {
-            $ppolicy_entry = ldap_get_entries($ldap, $ppolicy_search);
+            $ppolicy_entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $ppolicy_search);
         }
 
         $pwdLockout = strtolower($ppolicy_entry[0]['pwdlockout'][0]) == "true" ? true : false;
@@ -107,14 +107,14 @@ class OpenLDAP implements \Ltb\Directory
     public function canLockAccount($ldap, $dn, $config) : bool {
 
         # Search password policy
-        $ppolicy_search = ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdlockout'));
-        $errno = ldap_errno($ldap);
+        $ppolicy_search = \Ltb\PhpLDAP::ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdlockout'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return false;
         } else {
-            $ppolicy_entry = ldap_get_entries($ldap, $ppolicy_search);
+            $ppolicy_entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $ppolicy_search);
         }
 
         $pwdLockout = strtolower($ppolicy_entry[0]['pwdlockout'][0]) == "true" ? true : false;
@@ -125,14 +125,14 @@ class OpenLDAP implements \Ltb\Directory
     public function isPasswordExpired($ldap, $dn, $config) : bool {
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdchangedtime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdchangedtime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return false;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
 
         }
 
@@ -162,14 +162,14 @@ class OpenLDAP implements \Ltb\Directory
         $expirationDate = NULL;
 
         # Get entry
-        $search = ldap_read($ldap, $dn, "(objectClass=*)", array('pwdchangedtime'));
-        $errno = ldap_errno($ldap);
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdchangedtime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $expirationDate;
         } else {
-            $entry = ldap_get_entries($ldap, $search);
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
         # Get pwdChangedTime
@@ -201,14 +201,14 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Else get password policy configuration
-        $ppolicy_search = ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdmaxage'));
-        $errno = ldap_errno($ldap);
+        $ppolicy_search = \Ltb\PhpLDAP::ldap_read($ldap, $config['pwdPolicy'], "(objectClass=*)", array('pwdmaxage'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
             return $pwdMaxAge;
         } else {
-            $ppolicy_entry = ldap_get_entries($ldap, $ppolicy_search);
+            $ppolicy_entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $ppolicy_search);
         }
 
         if ( $ppolicy_entry[0]['pwdmaxage'] ) {
