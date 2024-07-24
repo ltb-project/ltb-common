@@ -75,7 +75,28 @@ class ActiveDirectory implements \Ltb\Directory
     }
 
     public function canLockAccount($ldap, $dn, $config) : bool {
-        return true;
+
+        // Not supported by AD
+        return false;
+    }
+
+    public function lockAccount($ldap, $dn) : bool {
+
+        // Not supported by AD
+        return false;
+    }
+
+    public function unlockAccount($ldap, $dn) : bool {
+
+        $modification = \Ltb\PhpLdap::ldap_mod_replace($ldap, $dn, array("lockoutTime" => array("0")));
+        $errno = ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Unlock account error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function isPasswordExpired($ldap, $dn, $config) : bool {

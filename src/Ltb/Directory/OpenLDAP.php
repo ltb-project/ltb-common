@@ -62,13 +62,13 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Get lockoutDuration
-        $lockoutDuration = $config["LockoutDuration"];
+        $lockoutDuration = $config["lockoutDuration"];
 
         if ( $pwdAccountLockedTime === "000001010000Z" ) {
             return $unlockDate;
-        } else if (isset($pwdLockoutDuration) and ($pwdLockoutDuration > 0)) {
+        } else if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
             $lockDate = \Ltb\Date::ldapDate2phpDate($pwdAccountLockedTime);
-            $unlockDate = date_add( $lockDate, new DateInterval('PT'.$pwdLockoutDuration.'S'));
+            $unlockDate = date_add( $lockDate, new DateInterval('PT'.$lockoutDuration.'S'));
         }
 
         return $unlockDate;
@@ -120,6 +120,32 @@ class OpenLDAP implements \Ltb\Directory
         $pwdLockout = strtolower($ppolicy_entry[0]['pwdlockout'][0]) == "true" ? true : false;
 
         return $pwdLockout;
+    }
+
+    public function lockAccount($ldap, $dn) : bool {
+
+        $modification = \Ltb\PhpLdap::ldap_mod_replace($ldap, $dn, array("pwdAccountLockedTime" => array("000001010000Z")));
+        $errno = ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Lock account error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public function unlockAccount($ldap, $dn) : bool {
+
+        $modification = \Ltb\PhpLdap::ldap_mod_replace($ldap, $dn, array("pwdAccountLockedTime" => array()));
+        $errno = ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Unlock account error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function isPasswordExpired($ldap, $dn, $config) : bool {

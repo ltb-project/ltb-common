@@ -26,6 +26,17 @@ interface Directory
     public function canLockAccount($ldap, $dn, $config) : bool;
 
     /*
+     * Lock account
+     */
+
+    public function lockAccount($ldap, $dn) : bool;
+
+    /*
+     * Unlock account
+     */
+    public function unlockAccount($ldap, $dn) : bool;
+
+    /*
      * Is password expired?
      */
     public function isPasswordExpired($ldap, $dn, $config) : bool;
