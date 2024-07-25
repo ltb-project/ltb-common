@@ -60,4 +60,19 @@ interface Directory
      * Should user reset password at next connection?
      */
     public function resetAtNextConnection($ldap, $dn) : bool;
+
+    /*
+     * Enable account
+     */
+    public function enableAccount($ldap, $dn) : bool;
+
+    /*
+     * Disable account
+     */
+    public function disableAccount($ldap, $dn) : bool;
+
+    /*
+     * Is account enabled?
+     */
+    public function isAccountEnabled($ldap, $dn) : bool;
 }

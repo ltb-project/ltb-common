@@ -282,4 +282,19 @@ class OpenLDAP implements \Ltb\Directory
             return false;
         }
     }
+
+    public function enableAccount($ldap, $dn) : bool {
+        // Not implemented
+        return false;
+    }
+
+    public function disableAccount($ldap, $dn) : bool {
+        // Not implemented
+        return false;
+    }
+
+    public function isAccountEnabled($ldap, $dn) : bool {
+        // Not implemented
+        return true;
+    }
 }

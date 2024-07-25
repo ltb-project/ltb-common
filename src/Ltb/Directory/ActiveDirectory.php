@@ -211,4 +211,83 @@ class ActiveDirectory implements \Ltb\Directory
             return false;
         }
     }
+
+    public function enableAccount($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('userAccountControl'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] & 2)) {
+            $newUAC = $entry[0]['useraccountcontrol'][0] | 2;
+            $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, array( "userAccountControl" => $newUAC));
+            $errno = ldap_errno($ldap);
+
+            if ($errno) {
+                error_log("LDAP - Modify userAccountControl error $errno  (".ldap_error($ldap).")");
+                return false;
+            } else {
+              return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    public function disableAccount($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('userAccountControl'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] ^ 2)) {
+            $newUAC = $entry[0]['useraccountcontrol'][0] & ~2;
+            $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, array( "userAccountControl" => $newUAC));
+            $errno = ldap_errno($ldap);
+
+            if ($errno) {
+                error_log("LDAP - Modify userAccountControl error $errno  (".ldap_error($ldap).")");
+                return false;
+            } else {
+              return true;
+            }
+        } else {
+            return true;
+        }
+
+    }
+
+    public function isAccountEnabled($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('userAccountControl'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] & 2)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
