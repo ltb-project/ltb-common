@@ -226,7 +226,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] & 2)) {
-            $newUAC = $entry[0]['useraccountcontrol'][0] | 2;
+            $newUAC = $entry[0]['useraccountcontrol'][0] & ~2;
             $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, array( "userAccountControl" => $newUAC));
             $errno = ldap_errno($ldap);
 
@@ -255,7 +255,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] ^ 2)) {
-            $newUAC = $entry[0]['useraccountcontrol'][0] & ~2;
+            $newUAC = $entry[0]['useraccountcontrol'][0] | 2;
             $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, array( "userAccountControl" => $newUAC));
             $errno = ldap_errno($ldap);
 
