@@ -2,6 +2,7 @@
 
 namespace Ltb\Directory;
 use \DateTime;
+use \DateInterval;
 
 class ActiveDirectory implements \Ltb\Directory
 {
@@ -36,9 +37,9 @@ class ActiveDirectory implements \Ltb\Directory
         return false;
     }
 
-    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+    public function getLockDate($ldap, $dn) : ?DateTime {
 
-        $unlockDate = NULL;
+        $lockDate = NULL;
 
         # Get entry
         $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
@@ -55,16 +56,30 @@ class ActiveDirectory implements \Ltb\Directory
         $lockoutTime = $entry[0]['lockouttime'][0];
 
         if ( !$lockoutTime or $lockoutTime == 0) {
+            return $lockDate;
+        }
+
+        $lockDate = \Ltb\Date::adDate2phpDate($lockoutTime);
+        return $lockDate;
+    }
+
+    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+
+        $unlockDate = NULL;
+
+        # Get lock date
+        $lockDate = $this->getLockDate($ldap, $dn);
+
+        if ( !$lockDate ) {
             return $unlockDate;
         }
 
-        # Get lockoutDuration
+        # Get lockout duration
         $lockoutDuration = $config["lockoutDuration"];
 
         # Compute unlock date
-        if ($lockoutDuration) {
-            $adUnlockDate = $lockoutTime + ($lockoutDuration * 10000000);
-            $unlockDate = \Ltb\Date::adDate2phpDate($adUnlockDate);
+        if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
+            $unlockDate = date_add( $lockDate, new DateInterval('PT'.$lockoutDuration.'S'));
         }
 
         return $unlockDate;

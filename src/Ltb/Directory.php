@@ -11,6 +11,11 @@ interface Directory
     public function isLocked($ldap, $dn, $config) : bool;
 
     /*
+     * Date when account has been locked
+     */
+    public function getLockDate($ldap, $dn) : ?DateTime;
+
+    /*
      * Date when account will be automatically unlocked
      */
     public function getUnlockDate($ldap, $dn, $config) : ?DateTime;

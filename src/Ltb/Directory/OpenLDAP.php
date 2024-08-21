@@ -39,9 +39,9 @@ class OpenLDAP implements \Ltb\Directory
         return false;
     }
 
-    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+    public function getLockDate($ldap, $dn) : ?DateTime {
 
-        $unlockDate = NULL;
+        $lockDate = NULL;
 
         # Get entry
         $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
@@ -57,17 +57,29 @@ class OpenLDAP implements \Ltb\Directory
         # Get pwdAccountLockedTime
         $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0];
 
-        if (!$pwdAccountLockedTime) {
+        if (!$pwdAccountLockedTime or $pwdAccountLockedTime === "000001010000Z") {
+            return $lockDate;
+        }
+
+        $lockDate = \Ltb\Date::ldapDate2phpDate($pwdAccountLockedTime);
+        return $lockDate;
+    }
+
+    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+
+        $unlockDate = NULL;
+
+        # Get lock date
+        $lockDate = $this->getLockDate($ldap, $dn);
+
+        if (!$lockDate) {
             return $unlockDate;
         }
 
-        # Get lockoutDuration
+        # Get lockout duration
         $lockoutDuration = $config["lockoutDuration"];
 
-        if ( $pwdAccountLockedTime === "000001010000Z" ) {
-            return $unlockDate;
-        } else if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
-            $lockDate = \Ltb\Date::ldapDate2phpDate($pwdAccountLockedTime);
+        if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
             $unlockDate = date_add( $lockDate, new DateInterval('PT'.$lockoutDuration.'S'));
         }
 
