@@ -309,4 +309,8 @@ class OpenLDAP implements \Ltb\Directory
         // Not implemented
         return true;
     }
+
+    public function getLdapDate($date) : string {
+        return \Ltb\Date::string2ldapDate( $date->format('d/m/Y') );
+    }
 }

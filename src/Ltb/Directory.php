@@ -33,7 +33,6 @@ interface Directory
     /*
      * Lock account
      */
-
     public function lockAccount($ldap, $dn) : bool;
 
     /*
@@ -80,4 +79,9 @@ interface Directory
      * Is account enabled?
      */
     public function isAccountEnabled($ldap, $dn) : bool;
+
+    /*
+     * Get LDAP date from PHP date
+     */
+    public function getLdapDate($date) : string;
 }

@@ -305,4 +305,8 @@ class ActiveDirectory implements \Ltb\Directory
             return true;
         }
     }
+
+    public function getLdapDate($date) : string {
+        return \Ltb\Date::timestamp2adDate( $date->getTimeStamp() );
+    }
 }
