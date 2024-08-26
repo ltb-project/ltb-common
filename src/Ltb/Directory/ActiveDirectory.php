@@ -75,7 +75,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get lockout duration
-        $lockoutDuration = $config["lockoutDuration"];
+        $lockoutDuration = $config["lockout_duration"];
 
         # Compute unlock date
         if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
@@ -83,16 +83,6 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         return $unlockDate;
-    }
-
-    public function getLockoutDuration($ldap, $dn, $config) : ?int {
-        return $config['lockoutDuration'];
-    }
-
-    public function canLockAccount($ldap, $dn, $config) : bool {
-
-        // Not supported by AD
-        return false;
     }
 
     public function lockAccount($ldap, $dn) : bool {
@@ -172,7 +162,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get pwdMaxAge
-        $pwdMaxAge = $config["pwdMaxAge"];
+        $pwdMaxAge = $config["password_max_age"];
 
         # Compute expiration date
         if ($pwdMaxAge) {
@@ -181,10 +171,6 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         return $expirationDate;
-    }
-
-    public function getPasswordMaxAge($ldap, $dn, $config) : ?int {
-        return $config['pwdMaxAge'];
     }
 
     public function modifyPassword($ldap, $dn, $password, $forceReset) : bool {
@@ -308,5 +294,28 @@ class ActiveDirectory implements \Ltb\Directory
 
     public function getLdapDate($date) : string {
         return \Ltb\Date::timestamp2adDate( $date->getTimeStamp() );
+    }
+
+    public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {
+
+        $ppolicyConfig = array();
+
+        # Get values from default ppolicy
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $default_ppolicy_dn, "(objectClass=*)", array('lockoutDuration', 'maxPwdAge'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return $ppolicyConfig;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        $ppolicyConfig["dn"] = $entry[0]["dn"];
+        $ppolicyConfig["lockout_duration"] = $entry[0]["lockoutduration"][0] / -10000000 ;
+        $ppolicyConfig["password_max_age"] = $entry[0]["maxpwdage"][0] / -10000000;
+        $ppolicyConfig["lockout_enabled"] = false;
+
+        return $ppolicyConfig;
     }
 }

@@ -21,16 +21,6 @@ interface Directory
     public function getUnlockDate($ldap, $dn, $config) : ?DateTime;
 
     /*
-     * Lock duration (in seconds)
-     */
-    public function getLockoutDuration($ldap, $dn, $config) : ?int;
-
-    /*
-     * Can account be locked?
-     */
-    public function canLockAccount($ldap, $dn, $config) : bool;
-
-    /*
      * Lock account
      */
     public function lockAccount($ldap, $dn) : bool;
@@ -44,11 +34,6 @@ interface Directory
      * Is password expired?
      */
     public function isPasswordExpired($ldap, $dn, $config) : bool;
-
-    /*
-     * Password max age (in seconds)
-     */
-    public function getPasswordMaxAge($ldap, $dn, $config) : ?int;
 
     /*
      * Date when password will be expired
@@ -84,4 +69,9 @@ interface Directory
      * Get LDAP date from PHP date
      */
     public function getLdapDate($date) : string;
+
+    /*
+     * Get password policy configuration
+     */
+    public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array;
 }
