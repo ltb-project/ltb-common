@@ -2,6 +2,8 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+
 final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 {
 
@@ -115,7 +117,7 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $search_result_title = "fullname";
         $search_result_sortby = "lastname";
         $search_result_items = array('identifier', 'mail', 'mobile');
-
+        $search_scope = "sub";
 
         $entries = [
                        'count' => 2,
@@ -200,7 +202,8 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                                          $attributes_map,
                                          $search_result_title,
                                          $search_result_sortby,
-                                         $search_result_items
+                                         $search_result_items,
+                                         $search_scope
                                        );
 
         $this->assertEquals("ldap_connection", $ldap, "Error while getting ldap_connection in search function");
@@ -598,10 +601,6 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
-  /** runInSeparateProcess is needed for \Ltb\Password
-   *  not interfering with other tests
-   * @runInSeparateProcess
-   */
     #[RunInSeparateProcess]
     public function test_change_ad_password_as_user(): void
     {
