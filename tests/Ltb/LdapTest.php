@@ -2,6 +2,8 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
+
 final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 {
 
@@ -599,10 +601,6 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
-  /** runInSeparateProcess is needed for \Ltb\Password
-   *  not interfering with other tests
-   * @runInSeparateProcess
-   */
     #[RunInSeparateProcess]
     public function test_change_ad_password_as_user(): void
     {
