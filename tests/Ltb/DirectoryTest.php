@@ -50,7 +50,6 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     public function test_openldap_islocked_still_locked(): void
     {
-
         $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
         $phpLDAPMock->shouldreceive([
             'ldap_read' => null,
@@ -70,10 +69,8 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertTrue($isLocked, "Account should still be locked");
     }
 
-
     public function test_openldap_islocked_no_more_locked(): void
     {
-
         $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
         $phpLDAPMock->shouldreceive([
             'ldap_read' => null,
@@ -93,6 +90,70 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($isLocked, "Account should no more be locked");
     }
 
+    public function test_openldap_getlockdate_empty(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => null,
+                    ]
+                ]
+            ]
+        ]);
+
+        $getLockDate = (new Ltb\Directory\OpenLDAP)->getLockDate(null, null);
+        $this->assertNull($getLockDate, "Lock date should be null");
+    }
+
+    public function test_openldap_getlockdate_lock_forever(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => "000001010000Z",
+                    ]
+                ]
+            ]
+        ]);
+
+        $getLockDate = (new Ltb\Directory\OpenLDAP)->getLockDate(null, null);
+        $this->assertNull($getLockDate, "Lock date should be null if user is locked forever");
+    }
+
+    public function test_openldap_getlockdate_notempty(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => $dt->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $getLockDate = (new Ltb\Directory\OpenLDAP)->getLockDate(null, null);
+        $this->assertInstanceOf("DateTime", $getLockDate, "Lock date should be a PHP DateTime object");
+        $this->assertEquals($dt->format("Y/m/d - h:i:s"), $getLockDate->format("Y/m/d - h:i:s"), "Lock date is correct");
+    }
 
     public function test_activedirectory_islocked_locked_forever(): void
     {
@@ -179,6 +240,51 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $isLocked = (new Ltb\Directory\ActiveDirectory)->isLocked(null, null, array('lockout_duration' => 86400));
         $this->assertFalse($isLocked, "Account should no more be locked");
+    }
+
+    public function test_activedirectory_getlockdate_empty(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'lockouttime' => [
+                        'count' => 1,
+                        0 => null,
+                    ]
+                ]
+            ]
+        ]);
+
+        $getLockDate = (new Ltb\Directory\ActiveDirectory)->getLockDate(null, null);
+        $this->assertNull($getLockDate, "Lock date should be null");
+    }
+
+    public function test_activedirectory_getlockdate_notempty(): void
+    {
+        $dt = new DateTime;
+        $ad_date = ((int)$dt->getTimestamp() + 11644473600) * 10000000;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'lockouttime' => [
+                        'count' => 1,
+                        0 => $ad_date,
+                    ]
+                ]
+            ]
+        ]);
+
+        $getLockDate = (new Ltb\Directory\ActiveDirectory)->getLockDate(null, null);
+        $this->assertInstanceOf("DateTime", $getLockDate, "Lock date should be a PHP DateTime object");
+        $this->assertEquals($dt->format("Y/m/d - h:i:s"), $getLockDate->format("Y/m/d - h:i:s"), "Lock date is correct");
     }
 
 }
