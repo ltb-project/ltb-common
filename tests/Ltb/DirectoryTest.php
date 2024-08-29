@@ -48,4 +48,49 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($isLocked, "Account should not be locked");
     }
 
+    public function test_openldap_islocked_still_locked(): void
+    {
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => (new DateTime)->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isLocked = (new Ltb\Directory\OpenLDAP)->isLocked(null, null, array('lockout_duration' => 86400));
+        $this->assertTrue($isLocked, "Account should still be locked");
+    }
+
+
+    public function test_openldap_islocked_no_more_locked(): void
+    {
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => (new DateTime)->modify("-10 days")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isLocked = (new Ltb\Directory\OpenLDAP)->isLocked(null, null, array('lockout_duration' => 86400));
+        $this->assertFalse($isLocked, "Account should no more be locked");
+    }
+
 }
