@@ -49,7 +49,7 @@ class OpenLDAP implements \Ltb\Directory
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return $unlockDate;
+            return $lockDate;
         } else {
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
