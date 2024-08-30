@@ -101,9 +101,9 @@ class PhpLDAP {
       return ldap_mod_replace(...$args);
   }
 
-  public static function ldap_first_entry($ldap, $entry, $attribute)
+  public static function ldap_first_entry(...$args)
   {
-      return ldap_first_entry($ldap, $entry, $attribute);
+      return ldap_first_entry(...$args);
   }
 
 }
