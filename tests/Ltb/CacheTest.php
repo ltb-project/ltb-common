@@ -5,21 +5,10 @@ require __DIR__ . '/../../vendor/autoload.php';
 final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 {
 
-    public function test_construct(): void
-    {
-        $cacheInstance = new \Ltb\Cache(
-                                           "testCache",
-                                           0,
-                                           null
-                                       );
-        $this->assertTrue($cacheInstance->cache instanceof Symfony\Component\Cache\Adapter\FilesystemAdapter, "Error while initializing cache object");
-    }
-
-
     public function test_generate_form_token(): void
     {
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -65,7 +54,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $generated_token = "e712b08e55f8977e2b9ecad35d5180ed24345e76607413411e90df66b9538fa1";
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -102,7 +91,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $generated_token = "e712b08e55f8977e2b9ecad35d5180ed24345e76607413411e90df66b9538fa1";
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -137,7 +126,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $tokenid = "e712b08e55f8977e2b9ecad35d5180ed24345e76607413411e90df66b9538fa1";
         $token_content = "test";
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -172,7 +161,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $tokenid = "e712b08e55f8977e2b9ecad35d5180ed24345e76607413411e90df66b9538fa1";
         $token_content = "test";
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -211,7 +200,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                          ];
         $cache_token_expiration = 3600;
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -253,7 +242,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                          ];
         $cache_token_expiration = 3600;
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
@@ -294,7 +283,7 @@ final class CacheTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                            'par2' => 'val2'
                          ];
 
-        $cacheInstance = new \Ltb\Cache(
+        $cacheInstance = new \Ltb\Cache\FileCache(
                                            "testCache",
                                            0,
                                            null
