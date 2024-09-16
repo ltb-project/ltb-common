@@ -1,29 +1,9 @@
-<?php namespace Ltb;
-
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+<?php namespace Ltb\Cache;
 
 class Cache {
 
     // symfony cache instance
     public $cache = null;
-
-    public function __construct(
-                          $namespace = 'ltbCache',
-                          $defaultLifetime = 0,
-                          $directory = null
-                      )
-    {
-
-        $this->cache = new FilesystemAdapter(
-            $namespace,
-            $defaultLifetime,
-            $directory
-        );
-
-        // Clean cache from expired entries
-        $this->cache->prune();
-
-    }
 
     # Generate a cache entry containing a token,
     # expiring after $cache_form_expiration seconds
