@@ -55,7 +55,7 @@ class ActiveDirectory implements \Ltb\Directory
         # Get lockoutTime
         $lockoutTime = $entry[0]['lockouttime'][0];
 
-        if ( !$lockoutTime or $lockoutTime == 0) {
+        if ( !$lockoutTime or $lockoutTime === 0) {
             return $lockDate;
         }
 
@@ -157,7 +157,7 @@ class ActiveDirectory implements \Ltb\Directory
         # Get pwdLastSet
         $pwdLastSet = $entry[0]['pwdlastset'][0];
 
-        if ( !$pwdLastSet or $pwdLastSet == 0) {
+        if ( !$pwdLastSet or $pwdLastSet === 0) {
             return $expirationDate;
         }
 
@@ -201,12 +201,12 @@ class ActiveDirectory implements \Ltb\Directory
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return $expirationDate;
+            return false;
         } else {
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
-        if ($entry[0]['pwdlastset'] and $entry[0]['pwdlastset'][0] == 0) {
+        if ($entry[0]['pwdlastset'] and $entry[0]['pwdlastset'][0] === 0) {
             return true;
         } else {
             return false;
