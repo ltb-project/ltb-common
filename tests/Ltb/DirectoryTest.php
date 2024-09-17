@@ -685,4 +685,46 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($reset, "Reset should be false");
     }
 
+    public function test_activedirectory_isenabled_true(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'useraccountcontrol' => [
+                        'count' => 1,
+                        0 => 512,
+                    ]
+                ]
+            ]
+        ]);
+
+        $accountEnabled = (new Ltb\Directory\ActiveDirectory)->isAccountEnabled(null, null);
+        $this->assertTrue($accountEnabled, "Account should be enabled");
+    }
+
+    public function test_activedirectory_isenabled_false(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'useraccountcontrol' => [
+                        'count' => 1,
+                        0 => 514,
+                    ]
+                ]
+            ]
+        ]);
+
+        $accountEnabled = (new Ltb\Directory\ActiveDirectory)->isAccountEnabled(null, null);
+        $this->assertFalse($accountEnabled, "Account should be disabled");
+    }
+
 }
