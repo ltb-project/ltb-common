@@ -200,6 +200,50 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertEquals($dt->modify("+1 day")->format("Y/m/d - h:i:s"), $unlockDate->format("Y/m/d - h:i:s"), "Unlock date is correct");
     }
 
+    public function test_openldap_isexpired_expired(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdchangedtime' => [
+                        'count' => 1,
+                        0 => $dt->modify("-1 month")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isPasswordExpired = (new Ltb\Directory\OpenLDAP)->isPasswordExpired(null, null, array('password_max_age' => 86400));
+        $this->assertTrue($isPasswordExpired, "Password should be expired");
+    }
+
+    public function test_openldap_isexpired_not_expired(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdchangedtime' => [
+                        'count' => 1,
+                        0 => $dt->modify("-1 hour")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isPasswordExpired = (new Ltb\Directory\OpenLDAP)->isPasswordExpired(null, null, array('password_max_age' => 86400));
+        $this->assertFalse($isPasswordExpired, "Password should not be expired");
+    }
+
     public function test_activedirectory_islocked_locked_forever(): void
     {
         $ad_date = ((int)time() + 11644473600) * 10000000;
@@ -376,6 +420,52 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $unlockDate = (new Ltb\Directory\ActiveDirectory)->getUnlockDate(null, null, array('lockout_duration' => 86400));
         $this->assertInstanceOf("DateTime", $unlockDate, "Unlock date should be a PHP DateTime object");
         $this->assertEquals($dt->modify("+1 day")->format("Y/m/d - h:i:s"), $unlockDate->format("Y/m/d - h:i:s"), "Unlock date is correct");
+    }
+
+    public function test_activedirectory_isexpired_expired(): void
+    {
+        $dt = new DateTime;
+        $ad_date = ((int)$dt->modify("-1 month")->getTimestamp() + 11644473600) * 10000000;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdlastset' => [
+                        'count' => 1,
+                        0 => $ad_date,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isPasswordExpired = (new Ltb\Directory\ActiveDirectory)->isPasswordExpired(null, null, array('password_max_age' => 86400));
+        $this->assertTrue($isPasswordExpired, "Password should be expired");
+    }
+
+    public function test_activedirectory_isexpired_not_expired(): void
+    {
+        $dt = new DateTime;
+        $ad_date = ((int)$dt->modify("-1 hour")->getTimestamp() + 11644473600) * 10000000;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdlastset' => [
+                        'count' => 1,
+                        0 => $ad_date,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isPasswordExpired = (new Ltb\Directory\ActiveDirectory)->isPasswordExpired(null, null, array('password_max_age' => 86400));
+        $this->assertFalse($isPasswordExpired, "Password should not be expired");
     }
 
 }
