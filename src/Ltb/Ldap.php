@@ -15,6 +15,7 @@ class Ldap {
     public $ldap_user_base       = null;
     public $ldap_size_limit      = null;
     public $ldap_krb5ccname      = null;
+    public $ldap_page_size       = 0;
 
     public function __construct(
                           $ldap_url,
@@ -24,7 +25,8 @@ class Ldap {
                           $ldap_network_timeout,
                           $ldap_user_base,
                           $ldap_size_limit,
-                          $ldap_krb5ccname
+                          $ldap_krb5ccname,
+                          $ldap_page_size = 0
                       )
     {
         $this->ldap_url             = $ldap_url;
@@ -35,6 +37,7 @@ class Ldap {
         $this->ldap_user_base       = $ldap_user_base;
         $this->ldap_size_limit      = $ldap_size_limit;
         $this->ldap_krb5ccname      = $ldap_krb5ccname;
+        $this->ldap_page_size       = $ldap_page_size;
 
     }
 
@@ -125,10 +128,53 @@ class Ldap {
             $attributes[] = $attributes_map[$search_result_title]['attribute'];
             $attributes[] = $attributes_map[$search_result_sortby]['attribute'];
 
-            # Search for users
-            $search = $this->search_with_scope($search_scope, $this->ldap_user_base, $ldap_filter, $attributes, 0, $this->ldap_size_limit);
+           $cookie = "";
+           do {
+               $controls = null;
+               if($this->ldap_page_size != 0)
+               {
+                   $controls = [[
+                                  'oid' => LDAP_CONTROL_PAGEDRESULTS,
+                                  'value' => [
+                                               'size' => $this->ldap_page_size,
+                                               'cookie' => $cookie]
+                               ]];
+               }
 
-            $errno = \Ltb\PhpLDAP::ldap_errno($this->ldap);
+               # Search for users
+               $search = $this->search_with_scope($search_scope,
+                                                  $this->ldap_user_base,
+                                                  $ldap_filter,
+                                                  $attributes,
+                                                  0,
+                                                  $this->ldap_size_limit,
+                                                  -1,
+                                                  LDAP_DEREF_NEVER,
+                                                  $controls );
+
+               $errno = null;
+               $matcheddn = null;
+               $errmsg = null;
+               $referrals = null;
+               \Ltb\PhpLDAP::ldap_parse_result($this->ldap, $search, $errno, $matcheddn, $errmsg, $referrals, $controls);
+
+               if($errno != 0)
+               {
+                   # if any error occurs, stop the search loop and treat error
+                   break;
+               }
+
+               $nb_entries += \Ltb\PhpLDAP::ldap_count_entries($this->ldap, $search);
+               $entries = array_merge($entries, \Ltb\PhpLDAP::ldap_get_entries($this->ldap, $search));
+               $entries["count"] = $nb_entries;
+
+               if (isset($controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'])) {
+                   $cookie = $controls[LDAP_CONTROL_PAGEDRESULTS]['value']['cookie'];
+               } else {
+                   $cookie = "";
+               }
+
+           } while (!empty($cookie) && $this->ldap_page_size != 0);
 
             if ( $errno == 4) {
                 $size_limit_reached = true;
@@ -138,13 +184,9 @@ class Ldap {
                 error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($this->ldap).")");
             } else {
 
-                # Get search results
-                $nb_entries = \Ltb\PhpLDAP::ldap_count_entries($this->ldap, $search);
-
                 if ($nb_entries === 0) {
                     $result = "noentriesfound";
                 } else {
-                    $entries = \Ltb\PhpLDAP::ldap_get_entries($this->ldap, $search);
 
                     # Sort entries
                     if (isset($search_result_sortby)) {

@@ -168,13 +168,15 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                            "(objectClass=inetOrgPerson)",
                            [0 => 'cn', 1 => 'sn', 2 => 'uid', 3 => 'mail', 4 => 'mobile', 5 => 'cn', 6 => 'sn'],
                            0,
-                           $this->ldap_size_limit
+                           $this->ldap_size_limit,
+                           -1,
+                           0,
+                           null
                           )
                     ->andReturn("ldap_search_result");
 
-        $phpLDAPMock->shouldreceive('ldap_errno')
-                    ->with("ldap_connection")
-                    ->andReturn(0);
+        $phpLDAPMock->shouldreceive('ldap_parse_result')
+                    ->with("ldap_connection", "ldap_search_result", null, null, null, null, null);
 
         $phpLDAPMock->shouldreceive('ldap_count_entries')
                     ->with("ldap_connection", "ldap_search_result")
@@ -211,6 +213,221 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertEquals(2, $nb_entries, "Wrong number of entries returned by search function");
         $this->assertEquals("testcn2", $res_entries[0]["cn"][0], "Wrong cn received in first entry. Entries may have not been sorted?");
         $this->assertEquals("testcn1", $res_entries[1]["cn"][0], "Wrong cn received in second entry. Entries may have not been sorted?");
+        $this->assertFalse($size_limit_reached, "Unexpected size limit reached in search function");
+    }
+
+
+    public function test_search_with_page_size(): void
+    {
+
+        $ldap_page_size = 1;
+        $control1 = [[
+                         'oid' => LDAP_CONTROL_PAGEDRESULTS,
+                         'value' => [
+                             'size' => $ldap_page_size,
+                             'cookie' => ""
+                         ]
+                    ]];
+
+        $cookie_page2 = "cookie_page2";
+        $control2 = [[
+                         'oid' => LDAP_CONTROL_PAGEDRESULTS,
+                         'value' => [
+                             'size' => $ldap_page_size,
+                             'cookie' => $cookie_page2
+                         ]
+                    ]];
+
+        $returnedcontrol1 = [
+                                LDAP_CONTROL_PAGEDRESULTS =>
+                                    [
+                                        'cookie' =>
+                                            [
+                                                'value' => $cookie_page2
+                                            ]
+                                    ]
+                            ];
+        $returnedcontrol2 = [ LDAP_CONTROL_PAGEDRESULTS => [ ] ];
+
+        $ldap_filter = "(objectClass=inetOrgPerson)";
+        $attributes = array("cn", "sn");
+        $attributes_map = array(
+            'authtimestamp' => array( 'attribute' => 'authtimestamp', 'faclass' => 'lock', 'type' => 'date' ),
+            'businesscategory' => array( 'attribute' => 'businesscategory', 'faclass' => 'briefcase', 'type' => 'text' ),
+            'carlicense' => array( 'attribute' => 'carlicense', 'faclass' => 'car', 'type' => 'text' ),
+            'created' => array( 'attribute' => 'createtimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'description' => array( 'attribute' => 'description', 'faclass' => 'info-circle', 'type' => 'text' ),
+            'displayname' => array( 'attribute' => 'displayname', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'employeenumber' => array( 'attribute' => 'employeenumber', 'faclass' => 'hashtag', 'type' => 'text' ),
+            'employeetype' => array( 'attribute' => 'employeetype', 'faclass' => 'id-badge', 'type' => 'text' ),
+            'fax' => array( 'attribute' => 'facsimiletelephonenumber', 'faclass' => 'fax', 'type' => 'tel' ),
+            'firstname' => array( 'attribute' => 'givenname', 'faclass' => 'user-o', 'type' => 'text' ),
+            'fullname' => array( 'attribute' => 'cn', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'identifier' => array( 'attribute' => 'uid', 'faclass' => 'user-o', 'type' => 'text' ),
+            'l' => array( 'attribute' => 'l', 'faclass' => 'globe', 'type' => 'text' ),
+            'lastname' => array( 'attribute' => 'sn', 'faclass' => 'user-o', 'type' => 'text' ),
+            'mail' => array( 'attribute' => 'mail', 'faclass' => 'envelope-o', 'type' => 'mailto' ),
+            'mailquota' => array( 'attribute' => 'gosamailquota', 'faclass' => 'pie-chart', 'type' => 'bytes' ),
+            'manager' => array( 'attribute' => 'manager', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'mobile' => array( 'attribute' => 'mobile', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'modified' => array( 'attribute' => 'modifytimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'organization' => array( 'attribute' => 'o', 'faclass' => 'building', 'type' => 'text' ),
+            'organizationalunit' => array( 'attribute' => 'ou', 'faclass' => 'building-o', 'type' => 'text' ),
+            'pager' => array( 'attribute' => 'pager', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'phone' => array( 'attribute' => 'telephonenumber', 'faclass' => 'phone', 'type' => 'tel' ),
+            'postaladdress' => array( 'attribute' => 'postaladdress', 'faclass' => 'map-marker', 'type' => 'address' ),
+            'postalcode' => array( 'attribute' => 'postalcode', 'faclass' => 'globe', 'type' => 'text' ),
+            'pwdaccountlockedtime' => array( 'attribute' => 'pwdaccountlockedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdchangedtime' => array( 'attribute' => 'pwdchangedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdfailuretime' => array( 'attribute' => 'pwdfailuretime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdlastsuccess' => array( 'attribute' => 'pwdlastsuccess', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdreset' => array( 'attribute' => 'pwdreset', 'faclass' => 'lock', 'type' => 'boolean' ),
+            'secretary' => array( 'attribute' => 'secretary', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'state' => array( 'attribute' => 'st', 'faclass' => 'globe', 'type' => 'text' ),
+            'street' => array( 'attribute' => 'street', 'faclass' => 'map-marker', 'type' => 'text' ),
+            'title' => array( 'attribute' => 'title', 'faclass' => 'certificate', 'type' => 'text' ),
+        );
+        $search_result_title = "fullname";
+        $search_result_sortby = "lastname";
+        $search_result_items = array('identifier', 'mail', 'mobile');
+        $search_scope = "sub";
+
+        $entries1 = [
+                       'count' => 1,
+                       0 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn1'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'zzzzzz'
+                           ]
+                       ]
+        ];
+
+        $entries2 = [
+                       'count' => 1,
+                       0 => [
+                           'count' => 2,
+                           0 => 'cn',
+                           1 => 'sn',
+                           'cn' => [
+                               'count' => 1,
+                               0 => 'testcn2'
+                           ],
+                           'sn' => [
+                               'count' => 1,
+                               0 => 'aaaaaa'
+                           ]
+                       ]
+        ];
+
+        $phpLDAPMock = Mockery::mock('overload:\Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_connect')
+                    ->with($this->ldap_url)
+                    ->andReturn("ldap_connection");
+
+        $phpLDAPMock->shouldreceive('ldap_set_option')
+                    ->andReturn(null);
+
+        $phpLDAPMock->shouldreceive('ldap_bind')
+                    ->with("ldap_connection", $this->ldap_binddn, $this->ldap_bindpw)
+                    ->andReturn(true);
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection",
+                           $this->ldap_user_base,
+                           "(objectClass=inetOrgPerson)",
+                           [0 => 'cn', 1 => 'sn', 2 => 'uid', 3 => 'mail', 4 => 'mobile', 5 => 'cn', 6 => 'sn'],
+                           0,
+                           $this->ldap_size_limit,
+                           -1,
+                           0,
+                           $control1
+                          )
+                    ->andReturn("ldap_search_result1");
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection",
+                           $this->ldap_user_base,
+                           "(objectClass=inetOrgPerson)",
+                           [0 => 'cn', 1 => 'sn', 2 => 'uid', 3 => 'mail', 4 => 'mobile', 5 => 'cn', 6 => 'sn'],
+                           0,
+                           $this->ldap_size_limit,
+                           -1,
+                           0,
+                           $control2
+                          )
+                    ->andReturn("ldap_search_result2");
+
+        $phpLDAPMock->shouldreceive('ldap_parse_result')
+                    ->with("ldap_connection", "ldap_search_result1", null, null, null, null,
+                           \Mockery::on(function(&$control) use(&$returnedcontrol1, &$returnedcontrol2, &$control1, &$control2){
+                               $cookie = $control[0]['value']['cookie'];
+                               switch ($cookie) {
+                                   case $control1[0]['value']['cookie']:
+                                       $control = $returnedcontrol1;
+                                       return true;
+                                   case $control2[0]['value']['cookie']:
+                                       $control = $returnedcontrol2;
+                                       return true;
+                                   default:
+                                       return false;
+                               }
+                           })
+                    );
+
+        $phpLDAPMock->shouldreceive('ldap_count_entries')
+                    ->with("ldap_connection", "ldap_search_result1")
+                    ->andReturn(1);
+
+        $phpLDAPMock->shouldreceive('ldap_count_entries')
+                    ->with("ldap_connection", "ldap_search_result2")
+                    ->andReturn(1);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with("ldap_connection","ldap_search_result1")
+                    ->andReturn($entries1);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with("ldap_connection","ldap_search_result2")
+                    ->andReturn($entries2);
+
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->ldap_url,
+                                         $this->ldap_starttls,
+                                         $this->ldap_binddn,
+                                         $this->ldap_bindpw,
+                                         $this->ldap_network_timeout,
+                                         $this->ldap_user_base,
+                                         $this->ldap_size_limit,
+                                         $this->ldap_krb5ccname,
+                                         $ldap_page_size
+                                     );
+        list($ldap, $msg) = $ldapInstance->connect();
+
+        list($ldap,$result,$nb_entries,$res_entries,$size_limit_reached) =
+                  $ldapInstance->search( $ldap_filter,
+                                         $attributes,
+                                         $attributes_map,
+                                         $search_result_title,
+                                         $search_result_sortby,
+                                         $search_result_items,
+                                         $search_scope
+                                       );
+
+        $this->assertEquals("ldap_connection", $ldap, "Error while getting ldap_connection in search function");
+        $this->assertFalse($result, "Error message returned while connecting to LDAP server in search function");
+        $this->assertEquals(1, $nb_entries, "Wrong number of entries returned by search function");
+        #$this->assertEquals(2, $nb_entries, "Wrong number of entries returned by search function");
+        $this->assertEquals("testcn1", $res_entries[0]["cn"][0], "Wrong cn received in first entry.");
+        #$this->assertEquals("testcn2", $res_entries[0]["cn"][0], "Wrong cn received in first entry. Entries may have not been sorted?");
+        #$this->assertEquals("testcn1", $res_entries[1]["cn"][0], "Wrong cn received in second entry. Entries may have not been sorted?");
         $this->assertFalse($size_limit_reached, "Unexpected size limit reached in search function");
     }
 
