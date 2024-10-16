@@ -1,6 +1,6 @@
-<?php                                                        
-                                                             
-require __DIR__ . '/../../vendor/autoload.php';              
+<?php
+
+require __DIR__ . '/../../vendor/autoload.php';
 use PHPUnit\Framework\TestCase;
 
 final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
@@ -725,6 +725,209 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $accountEnabled = (new Ltb\Directory\ActiveDirectory)->isAccountEnabled(null, null);
         $this->assertFalse($accountEnabled, "Account should be disabled");
+    }
+
+    public function test_openldap_isenabled_true(): void
+    {
+
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $search_result = "search_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap, $dn, "(objectClass=*)", array('pwdAccountDisabled'))
+                    ->andReturn($search_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(false);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with($ldap, $search_result)
+                    ->andReturn([
+                                    'count' => 1,
+                                    0 => [
+                                        'count' => 0,
+                                        'dn' => 'uid=test,ou=people,dc=my-domain,dc=com',
+                                    ]
+                                ]);
+
+        $accountEnabled = (new Ltb\Directory\OpenLDAP)->isAccountEnabled($ldap, $dn);
+        $this->assertTrue($accountEnabled, "OpenLDAP account should be enabled");
+    }
+
+    public function test_openldap_isenabled_false(): void
+    {
+
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $search_result = "search_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap, $dn, "(objectClass=*)", array('pwdAccountDisabled'))
+                    ->andReturn($search_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(false);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with($ldap, $search_result)
+                    ->andReturn(
+                                   [
+                                       'count' => 1,
+                                       0 =>
+                                       [
+                                           'pwdaccountdisabled' =>
+                                           [
+                                               'count' => 1,
+                                               0 => '00000101000000Z',
+                                           ],
+                                           0 => 'pwdaccountdisabled',
+                                           'count' => 1,
+                                           'dn' => 'uid=test,ou=people,dc=my-domain,dc=com',
+                                       ],
+                                   ]
+                               );
+
+        $accountEnabled = (new Ltb\Directory\OpenLDAP)->isAccountEnabled($ldap, $dn);
+        $this->assertFalse($accountEnabled, "OpenLDAP account should be disabled");
+    }
+
+    public function test_openldap_isenabled_error(): void
+    {
+
+        $ldap = "ldap_connection";
+        $dn = "invaliddn";
+        $search_result = "search_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_read')
+                    ->with($ldap, $dn, "(objectClass=*)", array('pwdAccountDisabled'))
+                    ->andReturn($search_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(34);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap)
+                    ->andReturn("Invalid DN syntax");
+
+
+        $accountEnabled = (new Ltb\Directory\OpenLDAP)->isAccountEnabled($ldap, $dn);
+        $this->assertFalse($accountEnabled, "OpenLDAP account should be considered disabled while error is encountered");
+    }
+
+    public function test_openldap_enable_account_ok(): void
+    {
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $update_result = "update_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_mod_replace')
+                    ->with($ldap, $dn, [ 'pwdAccountDisabled' => [] ])
+                    ->andReturn($update_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(0);
+
+        $enableAccountResult = (new Ltb\Directory\OpenLDAP)->enableAccount($ldap, $dn);
+        $this->assertTrue($enableAccountResult, "Error while enabling OpenLDAP account");
+    }
+
+    public function test_openldap_enable_account_ko(): void
+    {
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $update_result = "update_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_mod_replace')
+                    ->with($ldap, $dn, [ 'pwdAccountDisabled' => [] ])
+                    ->andReturn($update_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(50);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap)
+                    ->andReturn("Insufficient rights");
+
+        $enableAccountResult = (new Ltb\Directory\OpenLDAP)->enableAccount($ldap, $dn);
+        $this->assertFalse($enableAccountResult, "Should have encountered error while enabling OpenLDAP account");
+    }
+
+    public function test_openldap_disable_account_ok(): void
+    {
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $update_result = "update_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_mod_replace')
+                    ->with(
+                              $ldap,
+                              $dn,
+                              \Mockery::on(function ($mod) {
+                                  if( preg_match('/^[0-9]{14}Z$/', $mod['pwdAccountDisabled'][0]) )
+                                      return true;
+                                  else
+                                      return false;
+                              })
+                          )
+                    ->andReturn($update_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(0);
+
+        $disableAccountResult = (new Ltb\Directory\OpenLDAP)->disableAccount($ldap, $dn);
+        $this->assertTrue($disableAccountResult, "Error while disabling OpenLDAP account");
+    }
+
+    public function test_openldap_disable_account_ko(): void
+    {
+        $ldap = "ldap_connection";
+        $dn = "cn=dummy,dc=my-domain,dc=com";
+        $update_result = "update_result";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_mod_replace')
+                    ->with(
+                              $ldap,
+                              $dn,
+                              \Mockery::on(function ($mod) {
+                                  if( preg_match('/^[0-9]{14}Z$/', $mod['pwdAccountDisabled'][0]) )
+                                      return true;
+                                  else
+                                      return false;
+                              })
+                          )
+                    ->andReturn($update_result);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap)
+                    ->andReturn(50);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap)
+                    ->andReturn("Insufficient rights");
+
+        $disableAccountResult = (new Ltb\Directory\OpenLDAP)->disableAccount($ldap, $dn);
+        $this->assertFalse($disableAccountResult, "Should have encountered error while disabling OpenLDAP account");
     }
 
 }
