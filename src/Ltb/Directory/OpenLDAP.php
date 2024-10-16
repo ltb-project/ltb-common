@@ -221,18 +221,57 @@ class OpenLDAP implements \Ltb\Directory
     }
 
     public function enableAccount($ldap, $dn) : bool {
-        // Not implemented
-        return false;
+
+        $attrsToDelete = array( 'pwdAccountDisabled' => array() );
+
+        $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $attrsToDelete);
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ($errno) {
+            error_log("LDAP - Enabling account error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function disableAccount($ldap, $dn) : bool {
-        // Not implemented
-        return false;
+
+        # Date of disabling
+        $currentDate = gmdate("YmdHis")."Z";
+
+        $attrs = array( 'pwdAccountDisabled' => array($currentDate) );
+
+        $update = \Ltb\PhpLDAP::ldap_mod_replace($ldap, $dn, $attrs);
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ($errno) {
+            error_log("LDAP - Disabling account error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public function isAccountEnabled($ldap, $dn) : bool {
-        // Not implemented
-        return true;
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdAccountDisabled'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if (empty($entry[0]['pwdaccountdisabled'][0])) {
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     public function getLdapDate($date) : string {
