@@ -43,18 +43,20 @@ $ldap_binddn = "cn=admin,dc=example,dc=com";
 $ldap_bindpw = "secret";
 $ldap_network_timeout = 3;
 $ldap_user_base = "ou=people,dc=example,dc=com";
-$ldap_size_limit = 1000;                         
+$ldap_size_limit = -1;
 $ldap_krb5ccname = null;
+$ldap_page_size = 1000;
 
-$ldapInstance = new \Ltb\Ldap(                       
-        $this->ldap_url,        
-        $this->ldap_starttls,   
-        $this->ldap_binddn, 
-        $this->ldap_bindpw,
-        $this->ldap_network_timeout,
-        $this->ldap_user_base,
-        $this->ldap_size_limit,
-        $this->ldap_krb5ccname
+$ldapInstance = new \Ltb\Ldap(
+        $ldap_url,
+        $ldap_starttls,
+        $ldap_binddn,
+        $ldap_bindpw,
+        $ldap_network_timeout,
+        $ldap_user_base,
+        $ldap_size_limit,
+        $ldap_krb5ccname,
+        $ldap_page_size
 );
 
 $ldap_connection = $ldapInstance->connect();
