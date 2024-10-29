@@ -493,7 +493,8 @@ class Ldap {
     public function matchDn($dn, $dnAttribute, $filter, $base, $scope): bool {
 
         # Build filter
-        $search_filter = '(&' . $filter . '(' . $dnAttribute . '=' . $dn .'))';
+        $dn_escape = ldap_escape($dn, "", LDAP_ESCAPE_FILTER);
+        $search_filter = '(&' . $filter . '(' . $dnAttribute . '=' . $dn_escape .'))';
 
         # Search with scope
         $search = $this->search_with_scope($scope, $base, $search_filter, ['1.1']);
