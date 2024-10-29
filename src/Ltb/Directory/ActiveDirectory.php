@@ -318,4 +318,8 @@ class ActiveDirectory implements \Ltb\Directory
 
         return $ppolicyConfig;
     }
+
+    public function getDnAttribute() : string {
+        return "distinguishedName";
+    }
 }

@@ -314,4 +314,7 @@ class OpenLDAP implements \Ltb\Directory
         return $ppolicyConfig;
     }
 
+    public function getDnAttribute() : string {
+        return "entryDn";
+    }
 }

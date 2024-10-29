@@ -74,4 +74,9 @@ interface Directory
      * Get password policy configuration
      */
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array;
+
+    /*
+     * Return special attribute name containing entry DN
+     */
+    public function getDnAttribute() : string;
 }
