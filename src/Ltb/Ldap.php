@@ -481,5 +481,27 @@ class Ldap {
 
     }
 
+    /**
+     * test if a DN matches filter, base and scope
+     * @param string $dn: entry DN
+     * @param string $dnAttribute: attribute name containing the DN
+     * @param string $filter
+     * @param string $base
+     * @param string $scope
+     * @return bool: true if DN matches filter, base and scope
+     */
+    public function matchDn($dn, $dnAttribute, $filter, $base, $scope): bool {
+
+        # Build filter
+        $search_filter = '(&' . $filter . '(' . $dnAttribute . '=' . $dn .'))';
+
+        # Search with scope
+        $search = $this->search_with_scope($scope, $base, $search_filter, ['1.1']);
+
+        $count = \Ltb\PhpLDAP::ldap_count_entries($this->ldap, $search);
+
+        if ( $count == 1) { return true; }
+        return false;
+    }
 }
 ?>
