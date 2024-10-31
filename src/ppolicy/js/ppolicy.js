@@ -11,7 +11,7 @@
 
   barWidth = new Map([["Err", "0"], ["0", "20"], ["1", "40"], ["2", "60"], ["3", "80"], ["4", "100"]]);
 
-  json_policy = $("#json-policy").data('policy');
+  json_policy = $("#json-policy").data('policy') || btoa("{}") ;
   var local_policy = JSON.parse(atob(json_policy));
 
   displayEntropyBar = function(level) {
