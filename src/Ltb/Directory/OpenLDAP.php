@@ -20,7 +20,7 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Get pwdAccountLockedTime
-        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0];
+        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0] ?? null;
 
         if (!$pwdAccountLockedTime) {
             return false;
@@ -55,7 +55,7 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Get pwdAccountLockedTime
-        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0];
+        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0] ?? null;
 
         if (!$pwdAccountLockedTime or $pwdAccountLockedTime === "000001010000Z") {
             return $lockDate;
@@ -127,7 +127,7 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Get pwdChangedTime
-        $pwdChangedTime = $entry[0]['pwdchangedtime'][0];
+        $pwdChangedTime = $entry[0]['pwdchangedtime'][0] ?? null;
 
         if (!$pwdChangedTime) {
             return false;
@@ -163,7 +163,7 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         # Get pwdChangedTime
-        $pwdChangedTime = $entry[0]['pwdchangedtime'][0];
+        $pwdChangedTime = $entry[0]['pwdchangedtime'][0] ?? null;
 
         if (!$pwdChangedTime) {
             return $expirationDate;
@@ -213,7 +213,8 @@ class OpenLDAP implements \Ltb\Directory
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
-        if ($entry[0]['pwdreset'] and $entry[0]['pwdreset'][0] === "TRUE") {
+        $pwdreset = $entry[0]['pwdreset'][0] ?? null;
+        if( isset($pwdreset) and $pwdreset === "TRUE" ) {
             return true;
         } else {
             return false;
@@ -307,9 +308,10 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         $ppolicyConfig["dn"] = $entry[0]["dn"];
-        $ppolicyConfig["lockout_duration"] = $entry[0]["pwdlockoutduration"][0];
-        $ppolicyConfig["password_max_age"] = $entry[0]["pwdmaxage"][0];
-        $ppolicyConfig["lockout_enabled"] = strtolower($entry[0]['pwdlockout'][0]) == "true" ? true : false;
+        $ppolicyConfig["lockout_duration"] = $entry[0]["pwdlockoutduration"][0] ?? 0;
+        $ppolicyConfig["password_max_age"] = $entry[0]["pwdmaxage"][0] ?? 0;
+        $pwdlockout = $entry[0]['pwdlockout'][0] ?? false;
+        $ppolicyConfig["lockout_enabled"] = strtolower($pwdlockout) == "true" ? true : false;
 
         return $ppolicyConfig;
     }

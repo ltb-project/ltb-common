@@ -21,7 +21,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get lockoutTime
-        $lockoutTime = $entry[0]['lockouttime'][0];
+        $lockoutTime = $entry[0]['lockouttime'][0] ?? 0;
 
         # Get unlock date
         $unlockDate = $this->getUnlockDate($ldap, $dn, $config);
@@ -53,7 +53,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get lockoutTime
-        $lockoutTime = $entry[0]['lockouttime'][0];
+        $lockoutTime = $entry[0]['lockouttime'][0] ?? 0;
 
         if ( !$lockoutTime or $lockoutTime === 0) {
             return $lockDate;
@@ -119,7 +119,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get pwdLastSet
-        $pwdLastSet = $entry[0]['pwdlastset'][0];
+        $pwdLastSet = $entry[0]['pwdlastset'][0] ?? null;
 
         if (!$pwdLastSet) {
             return false;
@@ -155,7 +155,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         # Get pwdLastSet
-        $pwdLastSet = $entry[0]['pwdlastset'][0];
+        $pwdLastSet = $entry[0]['pwdlastset'][0] ?? null;
 
         if ( !$pwdLastSet or $pwdLastSet === 0) {
             return $expirationDate;
@@ -206,7 +206,8 @@ class ActiveDirectory implements \Ltb\Directory
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
-        if ($entry[0]['pwdlastset'] and $entry[0]['pwdlastset'][0] === 0) {
+        $pwdlastset = $entry[0]['pwdlastset'][0] ?? null;
+        if ( isset($pwdlastset) and $pwdlastset === 0) {
             return true;
         } else {
             return false;
@@ -312,8 +313,10 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         $ppolicyConfig["dn"] = $entry[0]["dn"];
-        $ppolicyConfig["lockout_duration"] = $entry[0]["lockoutduration"][0] / -10000000 ;
-        $ppolicyConfig["password_max_age"] = $entry[0]["maxpwdage"][0] / -10000000;
+        $lockoutduration = $entry[0]["lockoutduration"][0] ?? 0;
+        $ppolicyConfig["lockout_duration"] = $lockoutduration / -10000000 ;
+        $password_max_age = $entry[0]["maxpwdage"][0] ?? 0;
+        $ppolicyConfig["password_max_age"] = $password_max_age / -10000000;
         $ppolicyConfig["lockout_enabled"] = false;
 
         return $ppolicyConfig;
