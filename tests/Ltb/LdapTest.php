@@ -1214,6 +1214,28 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
+    public function test_matchDn(): void
+    {
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection", "ou=people,dc=my-domain,dc=com", "(&(objectClass=inetOrgPerson)(entryDn=uid=test,ou=people,dc=my-domain,dc=com))", [1.1])
+                    ->andReturn(array("ldap_search_result"));
+
+        $phpLDAPMock->shouldreceive('ldap_count_entries')
+                    ->with("ldap_connection", array("ldap_search_result"))
+                    ->andReturn(1);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+
+        $result_match = $ldapInstance->matchDn("uid=test,ou=people,dc=my-domain,dc=com", "entryDn", "(objectClass=inetOrgPerson)", "ou=people,dc=my-domain,dc=com", "sub");
+
+        $this->assertTrue($result_match, "DN match");
+
+    }
+
     public function setUp(): void
     {
         // Turn on error reporting
