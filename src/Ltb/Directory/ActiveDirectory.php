@@ -297,6 +297,10 @@ class ActiveDirectory implements \Ltb\Directory
         return \Ltb\Date::timestamp2adDate( $date->getTimestamp() );
     }
 
+    public function getPhpDate($date) : ?DateTime {
+        return \Ltb\Date::adDate2phpDate( $date );
+    }
+
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {
 
         $ppolicyConfig = array();
