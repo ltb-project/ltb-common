@@ -79,4 +79,9 @@ interface Directory
      * Return special attribute name containing entry DN
      */
     public function getDnAttribute() : string;
+
+    /*
+     * Is account valid? Relies on start and end validity dates
+     */
+    public function isAccountValid($ldap, $dn) : bool;
 }

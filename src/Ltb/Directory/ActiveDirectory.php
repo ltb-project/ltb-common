@@ -294,7 +294,7 @@ class ActiveDirectory implements \Ltb\Directory
     }
 
     public function getLdapDate($date) : string {
-        return \Ltb\Date::timestamp2adDate( $date->getTimeStamp() );
+        return \Ltb\Date::timestamp2adDate( $date->getTimestamp() );
     }
 
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {
@@ -325,4 +325,31 @@ class ActiveDirectory implements \Ltb\Directory
     public function getDnAttribute() : string {
         return "distinguishedName";
     }
+
+    public function isAccountValid($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('accountExpires'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if (!$entry[0]['accountexpires']) {
+            return true;
+        }
+
+        $enddate = \Ltb\Date::adDate2phpDate($entry[0]['accountexpires'][0]);
+
+        if ( time() < $enddate->getTimestamp() ) {
+            return true;
+        }
+
+        return false;
+    }
+
 }
