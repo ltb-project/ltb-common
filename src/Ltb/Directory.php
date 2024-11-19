@@ -71,6 +71,11 @@ interface Directory
     public function getLdapDate($date) : string;
 
     /*
+     * Get PHP date from LDAP date
+     */
+    public function getPhpDate($date) : ?DateTime;
+
+    /*
      * Get password policy configuration
      */
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array;

@@ -279,6 +279,10 @@ class OpenLDAP implements \Ltb\Directory
         return \Ltb\Date::string2ldapDate( $date->format('d/m/Y') );
     }
 
+    public function getPhpDate($date) : ?DateTime {
+        return \Ltb\Date::ldapDate2phpDate( $date );
+    }
+
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {
 
         $ppolicyConfig = array();
