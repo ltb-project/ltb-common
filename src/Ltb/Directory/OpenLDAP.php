@@ -335,15 +335,15 @@ class OpenLDAP implements \Ltb\Directory
 
         $time = time();
 
-        if ( $entry[0]['pwdstarttime'] ) {
-            $startdate = \Ltb\Date::adDate2phpDate($entry[0]['pwdstarttime'][0]);
+        if ( isset($entry[0]['pwdstarttime']) ) {
+            $startdate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdstarttime'][0]);
             if ( $time <= $startdate->getTimestamp() ) {
                 return false;
             }
         }
 
-        if ( $entry[0]['pwdstarttime'] ) {
-            $enddate = \Ltb\Date::adDate2phpDate($entry[0]['pwdendtime'][0]);
+        if ( isset($entry[0]['pwdendtime']) ) {
+            $enddate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdendtime'][0]);
             if ( $time >= $enddate->getTimestamp() ) {
                 return false;
             }
