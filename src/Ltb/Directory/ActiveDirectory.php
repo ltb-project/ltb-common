@@ -339,7 +339,7 @@ class ActiveDirectory implements \Ltb\Directory
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
-        if (!$entry[0]['accountexpires']) {
+        if (!isset($entry[0]['accountexpires'])) {
             return true;
         }
 
