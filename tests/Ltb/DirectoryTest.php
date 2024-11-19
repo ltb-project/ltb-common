@@ -351,6 +351,135 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($reset, "Reset should be false");
     }
 
+    public function test_openldap_isvalid_nodate(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 0,
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_openldap_isvalid_startdate_before(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdstarttime' => [
+                        'count' => 1,
+                        0 => $dt->modify("-1 week")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_openldap_isvalid_startdate_after(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdstarttime' => [
+                        'count' => 1,
+                        0 => $dt->modify("+1 week")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertFalse($isAccountValid, "Account should not be valid");
+    }
+
+    public function test_openldap_isvalid_enddate_before(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdendtime' => [
+                        'count' => 1,
+                        0 => $dt->modify("-1 week")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertFalse($isAccountValid, "Account should not be valid");
+    }
+
+    public function test_openldap_isvalid_enddate_after(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdendtime' => [
+                        'count' => 1,
+                        0 => $dt->modify("+1 week")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_openldap_isvalid_bothdate(): void
+    {
+        $dt = new DateTime;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'pwdstarttime' => [
+                        'count' => 1,
+                        0 => $dt->modify("-1 week")->format("Ymdhis\Z"),
+                    ],
+                    'pwdendtime' => [
+                        'count' => 1,
+                        0 => $dt->modify("+2 week")->format("Ymdhis\Z"),
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
     public function test_activedirectory_islocked_locked_forever(): void
     {
         $ad_date = ((int)time() + 11644473600) * 10000000;
@@ -928,6 +1057,67 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $disableAccountResult = (new Ltb\Directory\OpenLDAP)->disableAccount($ldap, $dn);
         $this->assertFalse($disableAccountResult, "Should have encountered error while disabling OpenLDAP account");
+    }
+
+    public function test_activedirectory_isvalid_nodate(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 0,
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_activedirectory_isvalid_enddate_before(): void
+    {
+        $dt = new DateTime;
+        $ad_date = ((int)$dt->modify("-1 week")->getTimestamp() + 11644473600) * 10000000;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'accountexpires' => [
+                        'count' => 1,
+                        0 => $ad_date,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid(null, null);
+        $this->assertFalse($isAccountValid, "Account should not be valid");
+    }
+
+    public function test_activedirectory_isvalid_enddate_after(): void
+    {
+        $dt = new DateTime;
+        $ad_date = ((int)$dt->modify("+1 week")->getTimestamp() + 11644473600) * 10000000;
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'accountexpires' => [
+                        'count' => 1,
+                        0 => $ad_date,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
     }
 
 }

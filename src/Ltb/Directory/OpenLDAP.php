@@ -319,4 +319,36 @@ class OpenLDAP implements \Ltb\Directory
     public function getDnAttribute() : string {
         return "entryDn";
     }
+
+    public function isAccountValid($ldap, $dn) : bool {
+
+        # Get entry
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdStartTime', 'pwdEndTime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return false;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        $time = time();
+
+        if ( isset($entry[0]['pwdstarttime']) ) {
+            $startdate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdstarttime'][0]);
+            if ( $time <= $startdate->getTimestamp() ) {
+                return false;
+            }
+        }
+
+        if ( isset($entry[0]['pwdendtime']) ) {
+            $enddate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdendtime'][0]);
+            if ( $time >= $enddate->getTimestamp() ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
