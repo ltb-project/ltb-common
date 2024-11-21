@@ -60,7 +60,7 @@ class Ldap {
         if ( isset($this->ldap_binddn) && isset($this->ldap_bindpw) ) {
             $bind = \Ltb\PhpLDAP::ldap_bind($ldap, $this->ldap_binddn, $this->ldap_bindpw);
         } elseif ( isset($this->ldap_krb5ccname) ) {
-            putenv("KRB5CCNAME=".$ldap_krb5ccname);
+            putenv("KRB5CCNAME=".$this->ldap_krb5ccname);
             $bind = \Ltb\PhpLDAP::ldap_sasl_bind($ldap, NULL, NULL, 'GSSAPI') or error_log('LDAP - GSSAPI Bind failed');
         } else {
             $bind = \Ltb\PhpLDAP::ldap_bind($ldap);
