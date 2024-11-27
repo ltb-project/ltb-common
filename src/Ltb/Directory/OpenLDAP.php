@@ -298,7 +298,14 @@ class OpenLDAP implements \Ltb\Directory
             $user_entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search_user);
         }
 
-        $ppolicy_dn = $user_entry[0]['pwdpolicysubentry'] ? $user_entry[0]['pwdpolicysubentry'][0] : $default_ppolicy_dn;
+        if(isset($user_entry[0]['pwdpolicysubentry'][0]) && !empty($user_entry[0]['pwdpolicysubentry'][0]))
+        {
+            $ppolicy_dn = $user_entry[0]['pwdpolicysubentry'][0];
+        }
+        else
+        {
+            $ppolicy_dn = $default_ppolicy_dn;
+        }
 
         # Get values from ppolicy
         $search = \Ltb\PhpLDAP::ldap_read($ldap, $ppolicy_dn, "(objectClass=pwdPolicy)", array('pwdLockoutDuration', 'pwdMaxAge', 'pwdLockout'));
