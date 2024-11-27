@@ -431,6 +431,115 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($size_limit_reached, "Unexpected size limit reached in search function");
     }
 
+    public function test_search_with_error(): void
+    {
+
+        $ldap_filter = "(objectClass=inetOrgPerson)";
+        $attributes = array("cn", "sn");
+        $attributes_map = array(
+            'authtimestamp' => array( 'attribute' => 'authtimestamp', 'faclass' => 'lock', 'type' => 'date' ),
+            'businesscategory' => array( 'attribute' => 'businesscategory', 'faclass' => 'briefcase', 'type' => 'text' ),
+            'carlicense' => array( 'attribute' => 'carlicense', 'faclass' => 'car', 'type' => 'text' ),
+            'created' => array( 'attribute' => 'createtimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'description' => array( 'attribute' => 'description', 'faclass' => 'info-circle', 'type' => 'text' ),
+            'displayname' => array( 'attribute' => 'displayname', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'employeenumber' => array( 'attribute' => 'employeenumber', 'faclass' => 'hashtag', 'type' => 'text' ),
+            'employeetype' => array( 'attribute' => 'employeetype', 'faclass' => 'id-badge', 'type' => 'text' ),
+            'fax' => array( 'attribute' => 'facsimiletelephonenumber', 'faclass' => 'fax', 'type' => 'tel' ),
+            'firstname' => array( 'attribute' => 'givenname', 'faclass' => 'user-o', 'type' => 'text' ),
+            'fullname' => array( 'attribute' => 'cn', 'faclass' => 'user-circle', 'type' => 'text' ),
+            'identifier' => array( 'attribute' => 'uid', 'faclass' => 'user-o', 'type' => 'text' ),
+            'l' => array( 'attribute' => 'l', 'faclass' => 'globe', 'type' => 'text' ),
+            'lastname' => array( 'attribute' => 'sn', 'faclass' => 'user-o', 'type' => 'text' ),
+            'mail' => array( 'attribute' => 'mail', 'faclass' => 'envelope-o', 'type' => 'mailto' ),
+            'mailquota' => array( 'attribute' => 'gosamailquota', 'faclass' => 'pie-chart', 'type' => 'bytes' ),
+            'manager' => array( 'attribute' => 'manager', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'mobile' => array( 'attribute' => 'mobile', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'modified' => array( 'attribute' => 'modifytimestamp', 'faclass' => 'clock-o', 'type' => 'date' ),
+            'organization' => array( 'attribute' => 'o', 'faclass' => 'building', 'type' => 'text' ),
+            'organizationalunit' => array( 'attribute' => 'ou', 'faclass' => 'building-o', 'type' => 'text' ),
+            'pager' => array( 'attribute' => 'pager', 'faclass' => 'mobile', 'type' => 'tel' ),
+            'phone' => array( 'attribute' => 'telephonenumber', 'faclass' => 'phone', 'type' => 'tel' ),
+            'postaladdress' => array( 'attribute' => 'postaladdress', 'faclass' => 'map-marker', 'type' => 'address' ),
+            'postalcode' => array( 'attribute' => 'postalcode', 'faclass' => 'globe', 'type' => 'text' ),
+            'pwdaccountlockedtime' => array( 'attribute' => 'pwdaccountlockedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdchangedtime' => array( 'attribute' => 'pwdchangedtime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdfailuretime' => array( 'attribute' => 'pwdfailuretime', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdlastsuccess' => array( 'attribute' => 'pwdlastsuccess', 'faclass' => 'lock', 'type' => 'date' ),
+            'pwdreset' => array( 'attribute' => 'pwdreset', 'faclass' => 'lock', 'type' => 'boolean' ),
+            'secretary' => array( 'attribute' => 'secretary', 'faclass' => 'user-circle-o', 'type' => 'dn_link' ),
+            'state' => array( 'attribute' => 'st', 'faclass' => 'globe', 'type' => 'text' ),
+            'street' => array( 'attribute' => 'street', 'faclass' => 'map-marker', 'type' => 'text' ),
+            'title' => array( 'attribute' => 'title', 'faclass' => 'certificate', 'type' => 'text' ),
+        );
+        $search_result_title = "fullname";
+        $search_result_sortby = "lastname";
+        $search_result_items = array('identifier', 'mail', 'mobile');
+        $search_scope = "sub";
+
+        $phpLDAPMock = Mockery::mock('overload:\Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_connect')
+                    ->with($this->ldap_url)
+                    ->andReturn("ldap_connection");
+
+        $phpLDAPMock->shouldreceive('ldap_set_option')
+                    ->andReturn(null);
+
+        $phpLDAPMock->shouldreceive('ldap_bind')
+                    ->with("ldap_connection", $this->ldap_binddn, $this->ldap_bindpw)
+                    ->andReturn(true);
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection",
+                           $this->ldap_user_base,
+                           "(objectClass=inetOrgPerson)",
+                           [0 => 'cn', 1 => 'sn', 2 => 'uid', 3 => 'mail', 4 => 'mobile', 5 => 'cn', 6 => 'sn'],
+                           0,
+                           $this->ldap_size_limit,
+                           -1,
+                           0,
+                           null
+                          )
+                    ->andReturn(false);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with("ldap_connection")
+                    ->andReturn(32);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with("ldap_connection")
+                    ->andReturn("No such object");
+
+        $ldapInstance = new \Ltb\Ldap(
+                                         $this->ldap_url,
+                                         $this->ldap_starttls,
+                                         $this->ldap_binddn,
+                                         $this->ldap_bindpw,
+                                         $this->ldap_network_timeout,
+                                         $this->ldap_user_base,
+                                         $this->ldap_size_limit,
+                                         $this->ldap_krb5ccname
+                                     );
+        list($ldap, $msg) = $ldapInstance->connect();
+
+        list($ldap,$result,$nb_entries,$res_entries,$size_limit_reached) =
+                  $ldapInstance->search( $ldap_filter,
+                                         $attributes,
+                                         $attributes_map,
+                                         $search_result_title,
+                                         $search_result_sortby,
+                                         $search_result_items,
+                                         $search_scope
+                                       );
+
+        $this->assertEquals("ldap_connection", $ldap, "Error while getting ldap_connection in search function");
+        $this->assertEquals("ldaperror", $result, "Wrong result (expected error) returned by search function");
+        $this->assertEquals(0, $nb_entries, "Wrong number of entries returned by search function");
+        $this->assertEquals([], $res_entries, "Wrong entries (not empty) returned by search function");
+        $this->assertFalse($size_limit_reached, "Unexpected size limit reached in search function");
+    }
+
     public function test_get_list(): void
     {
 
