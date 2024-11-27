@@ -152,6 +152,13 @@ class Ldap {
                                                   LDAP_DEREF_NEVER,
                                                   $controls );
 
+               if($search == false)
+               {
+                   # Error during search: compute the error code and stop the process
+                   $errno = \Ltb\PhpLDAP::ldap_errno($this->ldap);
+                   break;
+               }
+
                $errno = null;
                $matcheddn = null;
                $errmsg = null;
