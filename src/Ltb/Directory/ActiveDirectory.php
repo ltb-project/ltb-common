@@ -332,28 +332,48 @@ class ActiveDirectory implements \Ltb\Directory
 
     public function isAccountValid($ldap, $dn) : bool {
 
-        # Get entry
+        $time = time();
+        $startdate = $this->getStartDate($ldap, $dn);
+        $enddate = $this->getEndDate($ldap, $dn);
+
+        if ( isset($startdate) ) {
+            if ( $time <= $startdate->getTimestamp() ) {
+                return false;
+            }
+        }
+
+        if ( isset($enddate) ) {
+            if ( $time >= $enddate->getTimestamp() ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function getStartDate($ldap, $dn) : ?DateTime {
+
+        // No start date in AD
+        return null;
+    }
+
+    public function getEndDate($ldap, $dn) : ?DateTime {
+
         $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('accountExpires'));
         $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
         if ( $errno ) {
             error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
+            return null;
         } else {
             $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
         }
 
-        if (!isset($entry[0]['accountexpires'])) {
-            return true;
+        if (!isset($entry[0]['accountexpires']) or ($entry[0]['accountexpires'][0] == 0) or ($entry[0]['accountexpires'][0] == 9223372036854775807)) {
+            return null;
         }
 
         $enddate = \Ltb\Date::adDate2phpDate($entry[0]['accountexpires'][0]);
-
-        if ( time() < $enddate->getTimestamp() ) {
-            return true;
-        }
-
-        return false;
+        return $enddate ? $enddate : null;
     }
-
 }
