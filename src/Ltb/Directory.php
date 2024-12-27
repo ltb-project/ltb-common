@@ -89,4 +89,14 @@ interface Directory
      * Is account valid? Relies on start and end validity dates
      */
     public function isAccountValid($ldap, $dn) : bool;
+
+    /*
+     * Get validity start date
+     */
+    public function getStartDate($ldap, $dn) : ?DateTime;
+
+    /*
+     * Get validity end date
+     */
+    public function getEndDate($ldap, $dn) : ?DateTime;
 }

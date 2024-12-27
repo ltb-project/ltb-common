@@ -1120,4 +1120,45 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertTrue($isAccountValid, "Account should be valid");
     }
 
+    public function test_activedirectory_isvalid_enddate_zero(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'accountexpires' => [
+                        'count' => 1,
+                        0 => 0,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_activedirectory_isvalid_enddate_full(): void
+    {
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+        $phpLDAPMock->shouldreceive([
+            'ldap_read' => null,
+            'ldap_errno' => 0,
+            'ldap_get_entries' => [
+                'count' => 1,
+                0 => [
+                    'accountexpires' => [
+                        'count' => 1,
+                        0 => 9223372036854775807,
+                    ]
+                ]
+            ]
+        ]);
+
+        $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid(null, null);
+        $this->assertTrue($isAccountValid, "Account should be valid");
+    }
 }

@@ -333,28 +333,17 @@ class OpenLDAP implements \Ltb\Directory
 
     public function isAccountValid($ldap, $dn) : bool {
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdStartTime', 'pwdEndTime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
         $time = time();
+        $startdate = $this->getStartDate($ldap, $dn);
+        $enddate = $this->getEndDate($ldap, $dn);
 
-        if ( isset($entry[0]['pwdstarttime']) ) {
-            $startdate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdstarttime'][0]);
+        if ( isset($startdate) ) {
             if ( $time <= $startdate->getTimestamp() ) {
                 return false;
             }
         }
 
-        if ( isset($entry[0]['pwdendtime']) ) {
-            $enddate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdendtime'][0]);
+        if ( isset($enddate) ) {
             if ( $time >= $enddate->getTimestamp() ) {
                 return false;
             }
@@ -362,4 +351,45 @@ class OpenLDAP implements \Ltb\Directory
 
         return true;
     }
+
+    public function getStartDate($ldap, $dn) : ?DateTime {
+
+        $startdate = null;
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdStartTime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return null;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ( isset($entry[0]['pwdstarttime']) ) {
+            $startdate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdstarttime'][0]);
+        }
+
+        return $startdate ? $startdate : null;
+    }
+
+    public function getEndDate($ldap, $dn) : ?DateTime {
+
+        $enddate = null;
+        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdEndTime'));
+        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
+
+        if ( $errno ) {
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            return null;
+        } else {
+            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
+        }
+
+        if ( isset($entry[0]['pwdendtime']) ) {
+            $enddate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdendtime'][0]);
+        }
+
+        return $enddate ? $enddate : null;
+    }
+
 }
