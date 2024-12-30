@@ -207,7 +207,7 @@ class ActiveDirectory implements \Ltb\Directory
         }
 
         $pwdlastset = $entry[0]['pwdlastset'][0] ?? null;
-        if ( isset($pwdlastset) and $pwdlastset === 0) {
+        if ( isset($pwdlastset) and intval($pwdlastset) === 0) {
             return true;
         } else {
             return false;
