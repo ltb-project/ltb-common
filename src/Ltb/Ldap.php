@@ -57,7 +57,7 @@ class Ldap {
         }
 
         # Bind
-        if ( isset($this->ldap_binddn) && isset($this->ldap_bindpw) ) {
+        if ( !empty($this->ldap_binddn) ) {
             $bind = \Ltb\PhpLDAP::ldap_bind($ldap, $this->ldap_binddn, $this->ldap_bindpw);
         } elseif ( isset($this->ldap_krb5ccname) ) {
             putenv("KRB5CCNAME=".$this->ldap_krb5ccname);
