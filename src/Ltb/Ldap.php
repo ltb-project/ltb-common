@@ -130,7 +130,7 @@ class Ldap {
 
            $cookie = "";
            do {
-               $controls = null;
+               $controls = [];
                if($this->ldap_page_size != 0)
                {
                    $controls = [[
