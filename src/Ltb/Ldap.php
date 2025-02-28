@@ -241,7 +241,7 @@ class Ldap {
     {
         # 'count' is an additionnal attribute of ldap entries that will be preserved
         # remove it since lost by usort ( changed to integer index )
-        $count=$entries['count'];
+        $count = isset($entries['count']) ? $entries['count'] : null;
         unset($entries['count']);
 
         $sort_key=$key;
@@ -257,7 +257,9 @@ class Ldap {
 
 
         # preserve count since sorting should not change number of elements.
-        $entries['count']=$count;
+        if( $count ) {
+            $entries['count']=$count;
+        }
 
         return true;
 
