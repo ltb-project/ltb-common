@@ -92,6 +92,14 @@
             </li>
         {/if}
 
+        <!-- pwd_forbidden_ldap_fields criteria -->
+        {if $pwd_forbidden_ldap_fields && $use_restapi}
+            <li>
+                <i id="ppolicy-pwd_forbidden_ldap_fields-feedback" class="fa fa-li"> </i>
+                {$msg_policyforbiddenldapfields|unescape: "html" nofilter}
+            </li>
+        {/if}
+
         <!-- use_pwnedpasswords criteria -->
         {if $use_pwnedpasswords }
             <li>
