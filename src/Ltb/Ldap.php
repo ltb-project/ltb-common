@@ -165,7 +165,7 @@ class Ldap {
                $referrals = null;
                \Ltb\PhpLDAP::ldap_parse_result($this->ldap, $search, $errno, $matcheddn, $errmsg, $referrals, $controls);
 
-               if($errno != 0)
+               if($errno != 0 and $errno !=4)
                {
                    # if any error occurs, stop the search loop and treat error
                    break;
@@ -185,6 +185,7 @@ class Ldap {
 
             if ( $errno == 4) {
                 $size_limit_reached = true;
+                error_log("LDAP - Search reached size limit, only $nb_entries returned");
             }
             if ( $errno != 0 and $errno !=4 ) {
                 $result = "ldaperror";
