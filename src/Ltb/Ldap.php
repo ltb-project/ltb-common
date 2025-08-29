@@ -266,6 +266,105 @@ class Ldap {
 
     }
 
+
+    function compare_text($value1, $value2)
+    {
+        return $value1 <=> $value2;
+    }
+
+    function compare_bytes($value1, $value2)
+    {
+        if( is_numeric($value1) && is_numeric($value2) )
+        {
+            return ($value1 - $value2);
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    function compareValue($value1, $value2, $type)
+    {
+        # Check if comparison method exists
+        if(method_exists($this, 'compare_'.$type)){
+            # Run appropriate comparison method
+            return $this->{'compare_'.$type}($value1, $value2);
+        }
+        else
+        {
+            # By default, use a simple text comparison method
+            return $this->compare_text($value1, $value2);
+        }
+    }
+
+
+    function compareEntries($sort_key, $direction, $type)
+    {
+        return function ($a, $b) use ($sort_key, $direction, $type) {
+
+            $res = null;
+
+            if( is_array($a) and is_array($b) )
+            {
+                if( array_key_exists($sort_key,$a) )
+                {
+                    if( array_key_exists($sort_key,$b) )
+                    {
+                        # Ascending order "asc" by default (from lesser to greater values)
+                        $res = $this->compareValue($a[$sort_key][0], $b[$sort_key][0], $type);
+                    }
+                    else
+                    {
+                        $res = 1;
+                    }
+                }
+                else
+                {
+                    if( array_key_exists($sort_key,$b) )
+                    {
+                        $res = -1;
+                    }
+                    else
+                    {
+                        $res = 0;
+                    }
+                }
+            }
+            else
+            {
+                $res = 0;
+            }
+
+            # invert result if this is descending order (from greater to lesser values)
+            if( $direction == "desc" )
+            {
+                $res = $res * -1;
+            }
+            return $res;
+        };
+    }
+
+    # sorting function with direction (ascending / descending)
+    function sortEntries(array &$entries, $key, $direction, $type)
+    {
+        # 'count' is an additionnal attribute of ldap entries that will be preserved
+        # remove it since lost by usort ( changed to integer index )
+        $count = isset($entries['count']) ? $entries['count'] : null;
+        unset($entries['count']);
+
+        usort($entries, $this->compareEntries($key, $direction, $type));
+
+
+        # preserve count since sorting should not change number of elements.
+        if( $count ) {
+            $entries['count']=$count;
+        }
+
+        return true;
+
+    }
+
     # ldap_search + ldap_sort combined done at server side if possible
     # if not supported fallback on client sorting.
     function sorted_search($ldap_base, $ldap_filter, $attributes, $sortby, $ldap_size_limit) {
