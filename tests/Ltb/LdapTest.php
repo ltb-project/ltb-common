@@ -673,6 +673,134 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertEquals('testcn1', $entries[1]['cn'][0], "testcn1 has not been ordered correctly in entries array");
     }
 
+    public function test_compare_text(): void
+    {
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        $returnAsc = $ldapInstance->compare_text("test1", "test2");
+        $returnEq = $ldapInstance->compare_text("test", "test");
+        $returnDesc = $ldapInstance->compare_text("test4", "test3");
+
+        $this->assertTrue($returnAsc < 0, "compare_text: test1 should be < to test2");
+        $this->assertTrue($returnEq == 0, "compare_text: test should be = to test");
+        $this->assertTrue($returnDesc > 0, "compare_text: test1 should be > to test2");
+    }
+
+    public function test_compare_bytes(): void
+    {
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        $returnAsc = $ldapInstance->compare_bytes("4096", "2097152");
+        $returnEq = $ldapInstance->compare_bytes("1024", "1024");
+        $returnDesc = $ldapInstance->compare_bytes("1073741824", "2048");
+
+        $this->assertTrue($returnAsc < 0, "compare_bytes: 4096 should be < to 2097152");
+        $this->assertTrue($returnEq == 0, "compare_bytes: 1024 should be = to 1024");
+        $this->assertTrue($returnDesc > 0, "compare_bytes: 1073741824 should be > to 2048");
+    }
+
+    public function test_compareValue(): void
+    {
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        $returnBytes = $ldapInstance->compareValue("256", "1024", "bytes");
+        $returnText = $ldapInstance->compareValue("test1", "test2", "this-is-a-dummy-type");
+
+        $this->assertTrue($returnBytes < 0, "compareValue: 256 should be < to 1024 for bytes type");
+        $this->assertTrue($returnText < 0, "compareValue: test1 should be < to test2 for default text type");
+    }
+    public function test_compareEntries(): void
+    {
+
+        $entries = [
+            'count' => 2,
+            0 => [
+                'count' => 2,
+                0 => 'cn',
+                1 => 'sn',
+                'cn' => [
+                    'count' => 1,
+                    0 => 'testcn1'
+                ],
+                'sn' => [
+                    'count' => 1,
+                    0 => 'zzzz'
+                ]
+            ],
+            1 => [
+                'count' => 2,
+                0 => 'cn',
+                1 => 'sn',
+                'cn' => [
+                    'count' => 1,
+                    0 => 'testcn2'
+                ],
+                'sn' => [
+                    'count' => 1,
+                    0 => 'aaaa'
+                ]
+            ]
+        ];
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        $compareSnAscText = $ldapInstance->compareEntries("sn", "asc", "text")($entries[0], $entries[1]);
+        $compareSnDescText = $ldapInstance->compareEntries("sn", "desc", "text")($entries[0], $entries[1]);
+        $compareCnAscText = $ldapInstance->compareEntries("cn", "asc", "text")($entries[0], $entries[1]);
+        $compareCnDescText = $ldapInstance->compareEntries("cn", "desc", "text")($entries[0], $entries[1]);
+
+        $this->assertTrue($compareSnAscText > 0, "compareEntries: testcn1 has not been compared correctly to testcn2 for ascending text comparison of sn");
+        $this->assertTrue($compareSnDescText < 0, "compareEntries: testcn1 has not been compared correctly to testcn2 for descending text comparison of sn");
+        $this->assertTrue($compareCnAscText < 0, "compareEntries: testcn1 has not been compared correctly to testcn2 for ascending text comparison of cn");
+        $this->assertTrue($compareCnDescText > 0, "compareEntries: testcn1 has not been compared correctly to testcn2 for descending text comparison of cn");
+    }
+
+    public function test_sortEntries(): void
+    {
+
+        $entries = [
+            'count' => 2,
+            0 => [
+                'count' => 2,
+                0 => 'cn',
+                1 => 'sn',
+                'cn' => [
+                    'count' => 1,
+                    0 => 'testcn1'
+                ],
+                'sn' => [
+                    'count' => 1,
+                    0 => 'zzzz'
+                ]
+            ],
+            1 => [
+                'count' => 2,
+                0 => 'cn',
+                1 => 'sn',
+                'cn' => [
+                    'count' => 1,
+                    0 => 'testcn2'
+                ],
+                'sn' => [
+                    'count' => 1,
+                    0 => 'aaaa'
+                ]
+            ]
+        ];
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        $return = $ldapInstance->sortEntries($entries, "sn", "asc", "text");
+
+        $this->assertTrue($return, "Weird value returned by sortEntries function");
+        $this->assertEquals('testcn2', $entries[0]['cn'][0], "sortEntries: testcn2 has not been ordered correctly in entries array");
+        $this->assertEquals('testcn1', $entries[1]['cn'][0], "sortEntries: testcn1 has not been ordered correctly in entries array");
+    }
+
+
     public function test_sorted_search_with_sort_control(): void
     {
 
