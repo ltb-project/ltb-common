@@ -1479,4 +1479,52 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         //error_reporting(E_ALL);
     }
 
+    public function test_sortEntryAscending()
+    {
+        $entry = [
+            'foo' => ['count' => 3, 2, 1, 3],
+        ];
+        $attributes_map = [
+            ['attribute' => 'foo', 'sort' => 'ascending'],
+        ];
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+
+        $sorted = $ldapInstance->sortEntry($entry, $attributes_map);
+        $this->assertEquals([1,2,3], array_values($sorted['foo']));
+    }
+
+    public function test_sortEntryDescending()
+    {
+        $entry = [
+            'foo' => ['count' => 3, 2, 1, 3],
+        ];
+        $attributes_map = [
+            ['attribute' => 'foo', 'sort' => 'descending'],
+        ];
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+
+        $sorted = $ldapInstance->sortEntry($entry, $attributes_map);
+        $this->assertEquals([3,2,1], array_values($sorted['foo']));
+    }
+
+    public function test_sortEntryNoSortParam()
+    {
+        $entry = [
+            'foo' => ['count' => 3, 2, 1, 3],
+        ];
+        $attributes_map = [
+            ['attribute' => 'foo'],
+        ];
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+
+        $sorted = $ldapInstance->sortEntry($entry, $attributes_map);
+        $this->assertEquals([1,2,3], array_values($sorted['foo']));
+    }
+
 }
