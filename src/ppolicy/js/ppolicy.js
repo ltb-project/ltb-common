@@ -1,3 +1,61 @@
+const PWD_VALIDATE_FORBIDDEN_LDAP_API = "/rest/v1/validatepassword.php";
+
+let debounceTimeout;
+let storedLogin = '';
+let storedPassword = '';
+
+const isPasswordValid = async () => {
+  const response = await fetch(PWD_VALIDATE_FORBIDDEN_LDAP_API, {
+    method: "POST",
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: new URLSearchParams({
+      'login': storedLogin,
+      'password': storedPassword
+    }).toString(),
+  });
+
+  const rawResponse = await response.text();
+  const parsedResponse = JSON.parse(rawResponse);
+
+  if (response.ok) {
+    return parsedResponse['isValid'];
+  }
+  else if (response.status === 404) {
+    return true;
+  }
+  else if (response.status === 400) {
+    console.log("Error while trying to query " + PWD_VALIDATE_FORBIDDEN_LDAP_API + " api endpoint : invalid request");
+    console.log(parsedResponse['message']);
+    return true;
+  }
+  else {
+    console.log("Error while trying to query " + PWD_VALIDATE_FORBIDDEN_LDAP_API + " api endpoint : server error");
+    console.log(parsedResponse['message']);
+    return true;
+  }
+}
+
+const apiCallTimeout = async () => {
+  const isValid = await isPasswordValid()
+
+  if(isValid) {
+    setResult('ppolicy-pwd_forbidden_ldap_fields-feedback', "good");
+  } else {
+    setResult('ppolicy-pwd_forbidden_ldap_fields-feedback', "bad");
+  }
+}
+
+const updatePwdForbiddenLdapFeedback = () => {
+  if(!storedLogin.length || !storedPassword.length) {
+    setResult('ppolicy-pwd_forbidden_ldap_fields-feedback', "good");
+    return
+  }
+  setResult('ppolicy-pwd_forbidden_ldap_fields-feedback', "waiting");
+
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(apiCallTimeout, 1000);
+}
+
 (function() {
   var barWidth, bootstrapClasses, displayEntropyBar, displayEntropyBarMsg, ppolicyResults;
 
@@ -215,6 +273,10 @@
       }
     }
 
+    if (local_policy.pwd_forbidden_ldap_fields && local_policy.use_restapi) {
+      updatePwdForbiddenLdapFeedback();
+    }
+
     if (local_policy.pwd_diff_last_min_chars > 0) {
       if( $( "#oldpassword" ).length )
       {
@@ -363,6 +425,11 @@
     }
   });
 
+  $(document).on('loginchanged', function(event, context) {
+    storedLogin = context.login;
+    updatePwdForbiddenLdapFeedback();
+  });
+
 
 
   checkpassword = function(password, evType) {
@@ -373,8 +440,30 @@
       evType: evType,
       setResult: setResult
     };
+    storedPassword = password;
     return $(document).trigger(e, info);
   };
+
+  changelogin = function(login) {
+    var e, info
+    e = jQuery.Event("loginchanged");
+    info = {
+      login: login
+    };
+    return $(document).trigger(e, info);
+  }
+
+  if ( local_policy != null && local_policy.pwd_forbidden_ldap_fields && local_policy.use_restapi && $('#login').length ) {
+    changelogin($('#login').val());
+
+    $('#login').keyup(function(e) {
+      changelogin(e.target.value);
+    });
+    $('#login').focusout(function(e) {
+      changelogin(e.target.value);
+    });
+  }
+
   if ( (local_policy != null) && $('#newpassword').length) {
     checkpassword('');
     $('#newpassword').keyup(function(e) {
