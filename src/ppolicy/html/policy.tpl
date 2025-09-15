@@ -1,5 +1,4 @@
-{if $pwd_show_policy === "onerror" and !$pwd_show_policy_onerror }
-{else}
+{if ($pwd_show_policy === "always") || ($pwd_show_policy === "onerror" && $resetpasswordresult && $resetpasswordresult !== "passwordchanged") }
 <div class="ppolicy alert shadow alert-warning">
     {$msg_policy|unescape: "html" nofilter}
     <ul class="fa-ul text-left">
@@ -128,3 +127,4 @@
 </div>
 {/if}
 <div id="json-policy" data-policy='{$json_policy}'></div>
+<div id="resetpasswordresult" data-result='{$resetpasswordresult}'></div>
