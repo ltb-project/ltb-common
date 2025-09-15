@@ -375,7 +375,18 @@
     };
     return $(document).trigger(e, info);
   };
-  if ( (local_policy != null) && $('#newpassword').length) {
+  var resetpasswordresult = $("#resetpasswordresult").data('result');
+  if ( (local_policy != null) &&
+       (
+           local_policy.pwd_show_policy == "always"
+           ||
+           (
+              local_policy.pwd_show_policy == "onerror" &&
+              resetpasswordresult != "" &&
+              resetpasswordresult != "passwordchanged"
+           )
+       ) &&
+       $('#newpassword').length) {
     checkpassword('');
     $('#newpassword').keyup(function(e) {
       checkpassword(e.target.value);
