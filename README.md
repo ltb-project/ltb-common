@@ -1,7 +1,6 @@
 # LDAP Tool Box PHP framework
 
 [![Latest Stable Version](https://poser.pugx.org/ltb-project/ltb-common/v)](https://packagist.org/packages/ltb-project/ltb-common)
-[![Latest Unstable Version](https://poser.pugx.org/ltb-project/ltb-common/v/unstable)](https://packagist.org/packages/ltb-project/ltb-common)
 [![Total Downloads](https://poser.pugx.org/ltb-project/ltb-common/downloads)](https://packagist.org/packages/ltb-project/ltb-common)
 [![CI Status](https://github.com/ltb-project/ltb-common/actions/workflows/unittests.yml/badge.svg)](https://github.com/ltb-project/ltb-common/actions/workflows/unittests.yml)
 [![Composer Status](https://github.com/ltb-project/ltb-common/actions/workflows/php.yml/badge.svg)](https://github.com/ltb-project/ltb-common/actions/workflows/php.yml)
