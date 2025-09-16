@@ -254,14 +254,6 @@ final class Ppolicy {
         if (isset($pwd_show_policy_pos)) {
             $smarty->assign('pwd_show_policy_pos', $pwd_show_policy_pos);
             $smarty->assign('pwd_show_policy', $pwd_show_policy);
-            $smarty->assign('pwd_show_policy_onerror', true);
-            if ( $pwd_show_policy === "onerror" ) {
-                if ( !preg_match( "/tooshort|toobig|minlower|minupper|mindigit|minspecial|forbiddenchars|sameasold|notcomplex|sameaslogin|pwned|specialatends/" , $result) ) {
-                    $smarty->assign('pwd_show_policy_onerror', false);
-                } else {
-                    $smarty->assign('pwd_show_policy_onerror', true);
-                }
-            }
             self::smarty_assign_variable($smarty, $pwd_policy_config);
 
             // send policy to a JSON object usable in javascript
