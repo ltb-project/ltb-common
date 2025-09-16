@@ -340,9 +340,6 @@ final class PpolicyTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $smarty->shouldreceive('assign')
                ->once()
                ->with("pwd_show_policy", $pwd_show_policy );
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("pwd_show_policy_onerror", true );
 
         foreach ($pwd_policy_config as $param => $value) {
             if( isset($value) )
@@ -357,67 +354,6 @@ final class PpolicyTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
                 }
             }
         }
-
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("json_policy", base64_encode(json_encode( $pwd_policy_config )) );
-
-        \Ltb\Ppolicy::smarty_assign_ppolicy($smarty, $pwd_show_policy_pos, $pwd_show_policy, $result, $pwd_policy_config);
-
-        $this->assertNotNull($smarty, "smarty variable is null while testing smarty_assign_ppolicy" );
-
-    }
-
-    public function test_smarty_assign_ppolicy_show_policy_onerror()
-    {
-
-        $pwd_policy_config = array();
-
-        $smarty = Mockery::mock('Smarty');
-        $pwd_show_policy_pos = "above";
-        $pwd_show_policy = "onerror";
-        $result = "forbiddenchars";
-
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("pwd_show_policy_pos", $pwd_show_policy_pos );
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("pwd_show_policy", $pwd_show_policy );
-        $smarty->shouldreceive('assign')
-               ->twice()
-               ->with("pwd_show_policy_onerror", true );
-
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("json_policy", base64_encode(json_encode( $pwd_policy_config )) );
-
-        \Ltb\Ppolicy::smarty_assign_ppolicy($smarty, $pwd_show_policy_pos, $pwd_show_policy, $result, $pwd_policy_config);
-
-        $this->assertNotNull($smarty, "smarty variable is null while testing smarty_assign_ppolicy" );
-
-    }
-
-    public function test_smarty_assign_ppolicy_show_policy_onerror_dummy()
-    {
-
-        $pwd_policy_config = array();
-
-        $smarty = Mockery::mock('Smarty');
-        $pwd_show_policy_pos = "above";
-        $pwd_show_policy = "onerror";
-        $result = "dummy";
-
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("pwd_show_policy_pos", $pwd_show_policy_pos );
-        $smarty->shouldreceive('assign')
-               ->once()
-               ->with("pwd_show_policy", $pwd_show_policy );
-        $smarty->shouldreceive('assign')
-               ->with("pwd_show_policy_onerror", true );
-        $smarty->shouldreceive('assign')
-               ->with("pwd_show_policy_onerror", false );
 
         $smarty->shouldreceive('assign')
                ->once()
