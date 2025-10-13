@@ -5,6 +5,12 @@ use \DateTime;
 
 interface Directory
 {
+
+    /*
+     * Get specific operational attributes
+     */
+    public function getOperationalAttributes() : array;
+
     /*
      * Is account locked?
      */

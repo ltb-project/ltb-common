@@ -6,6 +6,18 @@ use \DateInterval;
 
 class ActiveDirectory implements \Ltb\Directory
 {
+
+    private $operationalAttributes = array(
+                                           'lockouttime',
+                                           'useraccountcontrol',
+                                           'pwdlastset',
+                                           'accountExpires',
+                                          );
+
+    public function getOperationalAttributes() : array {
+        return $this->operationalAttributes;
+    }
+
     public function isLocked($ldap, $dn, $config) : bool {
 
         # Get entry
