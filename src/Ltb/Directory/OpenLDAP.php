@@ -6,6 +6,19 @@ use \DateInterval;
 
 class OpenLDAP implements \Ltb\Directory
 {
+
+    private $operationalAttributes = array(
+                                           'pwdaccountlockedtime',
+                                           'pwdaccountdisabled',
+                                           'pwdchangedtime',
+                                           'pwdstarttime',
+                                           'pwdendtime'
+                                          );
+
+    public function getOperationalAttributes() : array {
+        return $this->operationalAttributes;
+    }
+
     public function isLocked($ldap, $dn, $config) : bool {
 
         # Get entry

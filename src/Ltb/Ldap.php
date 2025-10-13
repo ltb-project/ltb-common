@@ -122,11 +122,13 @@ class Ldap {
 
         if ($this->ldap) {
 
-            foreach( $search_result_items as $item ) {
-                $attributes[] = $attributes_map[$item]['attribute'];
+            # Order of the attributes array:
+            # [ $search_result_items[], title, sortby, $attributes[] ]
+            array_unshift($attributes, $attributes_map[$search_result_sortby]['attribute']);
+            array_unshift($attributes, $attributes_map[$search_result_title]['attribute']);
+            foreach( array_reverse($search_result_items) as $item ) {
+                array_unshift($attributes, $attributes_map[$item]['attribute']);
             }
-            $attributes[] = $attributes_map[$search_result_title]['attribute'];
-            $attributes[] = $attributes_map[$search_result_sortby]['attribute'];
 
            $cookie = "";
            do {
