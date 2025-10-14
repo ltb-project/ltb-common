@@ -14,17 +14,17 @@ interface Directory
     /*
      * Is account locked?
      */
-    public function isLocked($ldap, $dn, $config) : bool;
+    public function isLocked($entry, $pwdPolicyConfiguration) : bool;
 
     /*
      * Date when account has been locked
      */
-    public function getLockDate($ldap, $dn) : ?DateTime;
+    public function getLockDate($entry, $pwdPolicyConfiguration) : ?DateTime;
 
     /*
      * Date when account will be automatically unlocked
      */
-    public function getUnlockDate($ldap, $dn, $config) : ?DateTime;
+    public function getUnlockDate($entry, $pwdPolicyConfiguration) : ?DateTime;
 
     /*
      * Lock account

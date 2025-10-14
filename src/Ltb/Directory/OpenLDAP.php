@@ -20,21 +20,10 @@ class OpenLDAP implements \Ltb\Directory
         return $this->operationalAttributes;
     }
 
-    public function isLocked($ldap, $dn, $config) : bool {
-
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
+    public function isLocked($entry, $pwdPolicyConfiguration) : bool {
 
         # Get pwdAccountLockedTime
-        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0] ?? null;
+        $pwdAccountLockedTime = $entry['pwdaccountlockedtime'][0] ?? null;
 
         if (!$pwdAccountLockedTime) {
             return false;
@@ -44,7 +33,7 @@ class OpenLDAP implements \Ltb\Directory
             return true;
         }
 
-        $unlockDate = $this->getUnlockDate($ldap, $dn, $config);
+        $unlockDate = $this->getUnlockDate($entry, $pwdPolicyConfiguration);
 
         if ( $unlockDate and time() <= $unlockDate->getTimestamp() ) {
             return true;
@@ -53,23 +42,12 @@ class OpenLDAP implements \Ltb\Directory
         return false;
     }
 
-    public function getLockDate($ldap, $dn) : ?DateTime {
+    public function getLockDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $lockDate = NULL;
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdaccountlockedtime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return $lockDate;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
         # Get pwdAccountLockedTime
-        $pwdAccountLockedTime = $entry[0]['pwdaccountlockedtime'][0] ?? null;
+        $pwdAccountLockedTime = $entry['pwdaccountlockedtime'][0] ?? null;
 
         if (!$pwdAccountLockedTime or $pwdAccountLockedTime === "000001010000Z") {
             return $lockDate;
@@ -79,19 +57,19 @@ class OpenLDAP implements \Ltb\Directory
         return $lockDate;
     }
 
-    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+    public function getUnlockDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $unlockDate = NULL;
 
         # Get lock date
-        $lockDate = $this->getLockDate($ldap, $dn);
+        $lockDate = $this->getLockDate($entry, $pwdPolicyConfiguration);
 
         if (!$lockDate) {
             return $unlockDate;
         }
 
         # Get lockout duration
-        $lockoutDuration = $config["lockout_duration"];
+        $lockoutDuration = $pwdPolicyConfiguration["lockout_duration"];
 
         if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
             $unlockDate = date_add( $lockDate, new DateInterval('PT'.$lockoutDuration.'S'));
@@ -343,7 +321,7 @@ class OpenLDAP implements \Ltb\Directory
                 # Assign current user to corresponding password policy
                 $userPolicies[$entry['dn']] =
                     &$passwordPolicies[(sizeof($passwordPolicies)-1)];
-                
+
             }
 
         }
