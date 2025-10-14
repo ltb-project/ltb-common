@@ -82,6 +82,11 @@ interface Directory
     public function getPhpDate($date) : ?DateTime;
 
     /*
+     * Parses all entries and returns an array of all password policies
+     */
+    public function getPwdPolicies($ldap, $entries, $default_ppolicy_dn) : array;
+
+    /*
      * Get password policy configuration
      */
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array;

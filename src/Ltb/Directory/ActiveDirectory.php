@@ -11,7 +11,7 @@ class ActiveDirectory implements \Ltb\Directory
                                            'lockouttime',
                                            'useraccountcontrol',
                                            'pwdlastset',
-                                           'accountExpires',
+                                           'accountExpires'
                                           );
 
     public function getOperationalAttributes() : array {
@@ -311,6 +311,26 @@ class ActiveDirectory implements \Ltb\Directory
 
     public function getPhpDate($date) : ?DateTime {
         return \Ltb\Date::adDate2phpDate( $date );
+    }
+
+    # Function that parses all entries and returns ppolicies and user's ppolicies
+    public function getPwdPolicies($ldap, $entries, $default_ppolicy_dn) : array {
+
+        $passwordPolicies = array(); # list of unique password policies
+        $userPolicies = array();     # associative array: user => associated ppolicy
+
+        # Get default password policy from LDAP
+        $defaultPasswordPolicy = $this->getPwdPolicyConfiguration($ldap, null, $default_ppolicy_dn);
+        # Add the password policy to the list of unique ppolicies
+        array_push($passwordPolicies, $defaultPasswordPolicy);
+
+        # parse entries
+        foreach($entries as $entry_key => $entry)
+        {
+            $userPolicies[$entry['dn']] = &$passwordPolicies[0];
+        }
+        # return the list of unique password policies + the mapping user => password policy
+        return array( $passwordPolicies, $userPolicies);
     }
 
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {

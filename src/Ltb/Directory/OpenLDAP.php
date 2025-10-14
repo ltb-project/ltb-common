@@ -12,7 +12,8 @@ class OpenLDAP implements \Ltb\Directory
                                            'pwdaccountdisabled',
                                            'pwdchangedtime',
                                            'pwdstarttime',
-                                           'pwdendtime'
+                                           'pwdendtime',
+                                           'pwdpolicysubentry'
                                           );
 
     public function getOperationalAttributes() : array {
@@ -294,6 +295,60 @@ class OpenLDAP implements \Ltb\Directory
 
     public function getPhpDate($date) : ?DateTime {
         return \Ltb\Date::ldapDate2phpDate( $date );
+    }
+
+    # Function that parses all entries and returns ppolicies and user's ppolicies
+    public function getPwdPolicies($ldap, $entries, $default_ppolicy_dn) : array {
+
+        $passwordPolicies = array(); # list of unique password policies
+        $userPolicies = array();     # associative array: user => associated ppolicy
+        # parse entries
+        foreach($entries as $entry_key => $entry)
+        {
+
+            $currentPolicyDN = "";
+            # If user entry has a defined password policy
+            if(isset($entry['pwdpolicysubentry'][0]))
+            {
+                $currentPolicyDN = $entry['pwdpolicysubentry'][0];
+            }
+            else
+            {
+                $currentPolicyDN = $default_ppolicy_dn;
+            }
+
+            # Check if the password policy has already been fetched
+            $found = false;
+            for( $i=0 ; $i < count($passwordPolicies) ; $i++)
+            {
+                if( isset($passwordPolicies[$i]['dn']) &&
+                    $passwordPolicies[$i]['dn'] == $currentPolicyDN )
+                {
+                    # Point to the reference of existing ppolicy
+                    $userPolicies[$entry['dn']] = &$passwordPolicies[$i];
+                    $found = true;
+                    break;
+                }
+            }
+
+            # If policy has not been fetched
+            if(!$found)
+            {
+                # Get password policy from LDAP and add it to the list of unique ppolicies
+                $passwordPolicies[] = $this->getPwdPolicyConfiguration(
+                                          $ldap,
+                                          $entry['dn'],
+                                          $default_ppolicy_dn
+                                      );
+                # Assign current user to corresponding password policy
+                $userPolicies[$entry['dn']] =
+                    &$passwordPolicies[(sizeof($passwordPolicies)-1)];
+                
+            }
+
+        }
+        # return the list of unique password policies + the mapping user => password policy
+        return array( $passwordPolicies, $userPolicies);
     }
 
     public function getPwdPolicyConfiguration($ldap, $entry_dn, $default_ppolicy_dn) : Array {
