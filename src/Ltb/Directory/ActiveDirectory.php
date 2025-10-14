@@ -18,25 +18,13 @@ class ActiveDirectory implements \Ltb\Directory
         return $this->operationalAttributes;
     }
 
-    public function isLocked($ldap, $dn, $config) : bool {
-
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-
-        }
+    public function isLocked($entry, $pwdPolicyConfiguration) : bool {
 
         # Get lockoutTime
-        $lockoutTime = $entry[0]['lockouttime'][0] ?? 0;
+        $lockoutTime = $entry['lockouttime'][0] ?? 0;
 
         # Get unlock date
-        $unlockDate = $this->getUnlockDate($ldap, $dn, $config);
+        $unlockDate = $this->getUnlockDate($entry, $pwdPolicyConfiguration);
 
         if ($lockoutTime > 0 and !$unlockDate) {
             return true;
@@ -49,23 +37,12 @@ class ActiveDirectory implements \Ltb\Directory
         return false;
     }
 
-    public function getLockDate($ldap, $dn) : ?DateTime {
+    public function getLockDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $lockDate = NULL;
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('lockouttime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return $unlockDate;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
         # Get lockoutTime
-        $lockoutTime = $entry[0]['lockouttime'][0] ?? 0;
+        $lockoutTime = $entry['lockouttime'][0] ?? 0;
 
         if ( !$lockoutTime or $lockoutTime === 0) {
             return $lockDate;
@@ -75,19 +52,19 @@ class ActiveDirectory implements \Ltb\Directory
         return $lockDate;
     }
 
-    public function getUnlockDate($ldap, $dn, $config) : ?DateTime {
+    public function getUnlockDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $unlockDate = NULL;
 
         # Get lock date
-        $lockDate = $this->getLockDate($ldap, $dn);
+        $lockDate = $this->getLockDate($entry, $pwdPolicyConfiguration);
 
         if ( !$lockDate ) {
             return $unlockDate;
         }
 
         # Get lockout duration
-        $lockoutDuration = $config["lockout_duration"];
+        $lockoutDuration = $pwdPolicyConfiguration["lockout_duration"];
 
         # Compute unlock date
         if (isset($lockoutDuration) and ($lockoutDuration > 0)) {
