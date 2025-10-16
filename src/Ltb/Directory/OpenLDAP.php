@@ -343,11 +343,11 @@ class OpenLDAP implements \Ltb\Directory
         return "entryDn";
     }
 
-    public function isAccountValid($ldap, $dn) : bool {
+    public function isAccountValid($entry, $pwdPolicyConfiguration) : bool {
 
         $time = time();
-        $startdate = $this->getStartDate($ldap, $dn);
-        $enddate = $this->getEndDate($ldap, $dn);
+        $startdate = $this->getStartDate($entry, $pwdPolicyConfiguration);
+        $enddate = $this->getEndDate($entry, $pwdPolicyConfiguration);
 
         if ( isset($startdate) ) {
             if ( $time <= $startdate->getTimestamp() ) {
@@ -364,41 +364,23 @@ class OpenLDAP implements \Ltb\Directory
         return true;
     }
 
-    public function getStartDate($ldap, $dn) : ?DateTime {
+    public function getStartDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $startdate = null;
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdStartTime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return null;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
-        if ( isset($entry[0]['pwdstarttime']) ) {
-            $startdate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdstarttime'][0]);
+        if ( isset($entry['pwdstarttime']) ) {
+            $startdate = \Ltb\Date::ldapDate2phpDate($entry['pwdstarttime'][0]);
         }
 
         return $startdate ? $startdate : null;
     }
 
-    public function getEndDate($ldap, $dn) : ?DateTime {
+    public function getEndDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $enddate = null;
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdEndTime'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
 
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return null;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
-        if ( isset($entry[0]['pwdendtime']) ) {
-            $enddate = \Ltb\Date::ldapDate2phpDate($entry[0]['pwdendtime'][0]);
+        if ( isset($entry['pwdendtime']) ) {
+            $enddate = \Ltb\Date::ldapDate2phpDate($entry['pwdendtime'][0]);
         }
 
         return $enddate ? $enddate : null;

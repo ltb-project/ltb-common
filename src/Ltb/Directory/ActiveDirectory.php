@@ -305,11 +305,11 @@ class ActiveDirectory implements \Ltb\Directory
         return "distinguishedName";
     }
 
-    public function isAccountValid($ldap, $dn) : bool {
+    public function isAccountValid($entry, $pwdPolicyConfiguration) : bool {
 
         $time = time();
-        $startdate = $this->getStartDate($ldap, $dn);
-        $enddate = $this->getEndDate($ldap, $dn);
+        $startdate = $this->getStartDate($entry, $pwdPolicyConfiguration);
+        $enddate = $this->getEndDate($entry, $pwdPolicyConfiguration);
 
         if ( isset($startdate) ) {
             if ( $time <= $startdate->getTimestamp() ) {
@@ -326,29 +326,19 @@ class ActiveDirectory implements \Ltb\Directory
         return true;
     }
 
-    public function getStartDate($ldap, $dn) : ?DateTime {
+    public function getStartDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         // No start date in AD
         return null;
     }
 
-    public function getEndDate($ldap, $dn) : ?DateTime {
+    public function getEndDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('accountExpires'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return null;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
-        if (!isset($entry[0]['accountexpires']) or ($entry[0]['accountexpires'][0] == 0) or ($entry[0]['accountexpires'][0] == 9223372036854775807)) {
+        if (!isset($entry['accountexpires']) or ($entry['accountexpires'][0] == 0) or ($entry['accountexpires'][0] == 9223372036854775807)) {
             return null;
         }
 
-        $enddate = \Ltb\Date::adDate2phpDate($entry[0]['accountexpires'][0]);
+        $enddate = \Ltb\Date::adDate2phpDate($entry['accountexpires'][0]);
         return $enddate ? $enddate : null;
     }
 }

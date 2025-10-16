@@ -99,15 +99,15 @@ interface Directory
     /*
      * Is account valid? Relies on start and end validity dates
      */
-    public function isAccountValid($ldap, $dn) : bool;
+    public function isAccountValid($entry, $pwdPolicyConfiguration) : bool;
 
     /*
      * Get validity start date
      */
-    public function getStartDate($ldap, $dn) : ?DateTime;
+    public function getStartDate($entry, $pwdPolicyConfiguration) : ?DateTime;
 
     /*
      * Get validity end date
      */
-    public function getEndDate($ldap, $dn) : ?DateTime;
+    public function getEndDate($entry, $pwdPolicyConfiguration) : ?DateTime;
 }
