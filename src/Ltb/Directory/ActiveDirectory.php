@@ -262,20 +262,9 @@ class ActiveDirectory implements \Ltb\Directory
 
     }
 
-    public function isAccountEnabled($ldap, $dn) : bool {
+    public function isAccountEnabled($entry) : bool {
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('userAccountControl'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
-        if ($entry[0]['useraccountcontrol'] and ( $entry[0]['useraccountcontrol'][0] & 2)) {
+        if ($entry['useraccountcontrol'] and ( $entry['useraccountcontrol'][0] & 2)) {
             return false;
         } else {
             return true;

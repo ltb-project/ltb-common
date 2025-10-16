@@ -246,20 +246,9 @@ class OpenLDAP implements \Ltb\Directory
         }
     }
 
-    public function isAccountEnabled($ldap, $dn) : bool {
+    public function isAccountEnabled($entry) : bool {
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdAccountDisabled'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".\Ltb\PhpLDAP::ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
-        if (empty($entry[0]['pwdaccountdisabled'][0])) {
+        if (empty($entry['pwdaccountdisabled'][0])) {
             return true;
         } else {
             return false;

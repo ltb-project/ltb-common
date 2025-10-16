@@ -69,7 +69,7 @@ interface Directory
     /*
      * Is account enabled?
      */
-    public function isAccountEnabled($ldap, $dn) : bool;
+    public function isAccountEnabled($entry) : bool;
 
     /*
      * Get LDAP date from PHP date
