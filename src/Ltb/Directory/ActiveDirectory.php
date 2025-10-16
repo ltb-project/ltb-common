@@ -93,29 +93,17 @@ class ActiveDirectory implements \Ltb\Directory
         }
     }
 
-    public function isPasswordExpired($ldap, $dn, $config) : bool {
-
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return false;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-
-        }
+    public function isPasswordExpired($entry, $pwdPolicyConfiguration) : bool {
 
         # Get pwdLastSet
-        $pwdLastSet = $entry[0]['pwdlastset'][0] ?? null;
+        $pwdLastSet = $entry['pwdlastset'][0] ?? null;
 
         if (!$pwdLastSet) {
             return false;
         }
 
         # Get password expiration date
-        $expirationDate = $this->getPasswordExpirationDate($ldap, $dn, $config);
+        $expirationDate = $this->getPasswordExpirationDate($entry, $pwdPolicyConfiguration);
 
         if (!$expirationDate) {
             return false;
@@ -128,30 +116,19 @@ class ActiveDirectory implements \Ltb\Directory
         return false;
     }
 
-    public function getPasswordExpirationDate($ldap, $dn, $config) : ?DateTime {
+    public function getPasswordExpirationDate($entry, $pwdPolicyConfiguration) : ?DateTime {
 
         $expirationDate = NULL;
 
-        # Get entry
-        $search = \Ltb\PhpLDAP::ldap_read($ldap, $dn, "(objectClass=*)", array('pwdlastset'));
-        $errno = \Ltb\PhpLDAP::ldap_errno($ldap);
-
-        if ( $errno ) {
-            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-            return $expirationDate;
-        } else {
-            $entry = \Ltb\PhpLDAP::ldap_get_entries($ldap, $search);
-        }
-
         # Get pwdLastSet
-        $pwdLastSet = $entry[0]['pwdlastset'][0] ?? null;
+        $pwdLastSet = $entry['pwdlastset'][0] ?? null;
 
         if ( !$pwdLastSet or $pwdLastSet === 0) {
             return $expirationDate;
         }
 
         # Get pwdMaxAge
-        $pwdMaxAge = $config["password_max_age"];
+        $pwdMaxAge = $pwdPolicyConfiguration["password_max_age"];
 
         # Compute expiration date
         if ($pwdMaxAge) {

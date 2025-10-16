@@ -39,12 +39,12 @@ interface Directory
     /*
      * Is password expired?
      */
-    public function isPasswordExpired($ldap, $dn, $config) : bool;
+    public function isPasswordExpired($entry, $pwdPolicyConfiguration) : bool;
 
     /*
      * Date when password will be expired
      */
-    public function getPasswordExpirationDate($ldap, $dn, $config) : ?DateTime;
+    public function getPasswordExpirationDate($entry, $pwdPolicyConfiguration) : ?DateTime;
 
     /*
      * Modify the password
