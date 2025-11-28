@@ -22,6 +22,10 @@ class OpenLDAP implements \Ltb\Directory
 
     public function isLocked($entry, $pwdPolicyConfiguration) : bool {
 
+        if (!$pwdPolicyConfiguration['lockout_enabled']) {
+            return false;
+        }
+
         # Get pwdAccountLockedTime
         $pwdAccountLockedTime = $entry['pwdaccountlockedtime'][0] ?? null;
 
