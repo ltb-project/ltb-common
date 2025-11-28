@@ -58,6 +58,32 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertFalse($isLocked, "Account should no more be locked");
     }
 
+    public function test_openldap_islocked_lockout_duration_zero(): void
+    {
+        $entry = [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => (new DateTime)->modify("-10 days")->format("Ymdhis\Z")
+                    ]
+                 ];
+
+        $isLocked = (new Ltb\Directory\OpenLDAP)->isLocked($entry, array('lockout_duration' => 0));
+        $this->assertTrue($isLocked, "Account should be locked");
+    }
+
+    public function test_openldap_islocked_no_lockout_duration(): void
+    {
+        $entry = [
+                    'pwdaccountlockedtime' => [
+                        'count' => 1,
+                        0 => (new DateTime)->modify("-10 days")->format("Ymdhis\Z")
+                    ]
+                 ];
+
+        $isLocked = (new Ltb\Directory\OpenLDAP)->isLocked($entry, array('lockout_duration' => null));
+        $this->assertTrue($isLocked, "Account should be locked");
+    }
+
     public function test_openldap_getlockdate_empty(): void
     {
         $entry = [
