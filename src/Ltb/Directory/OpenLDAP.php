@@ -35,6 +35,10 @@ class OpenLDAP implements \Ltb\Directory
 
         $unlockDate = $this->getUnlockDate($entry, $pwdPolicyConfiguration);
 
+        if (!$unlockDate) {
+            return true;
+        }
+
         if ( $unlockDate and time() <= $unlockDate->getTimestamp() ) {
             return true;
         }
