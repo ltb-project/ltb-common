@@ -1,11 +1,29 @@
 <?xml version="1.0"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" colors="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd">
+<phpunit
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  colors="true"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.0/phpunit.xsd"
+  displayDetailsOnTestsThatTriggerDeprecations="true"
+  displayDetailsOnTestsThatTriggerErrors="true"
+  displayDetailsOnTestsThatTriggerNotices="true"
+  displayDetailsOnTestsThatTriggerWarnings="true"
+  displayDetailsOnPhpunitDeprecations="true"
+>
   <testsuites>
     <testsuite name="main">
       <directory suffix="Test.php">tests/Ltb</directory>
     </testsuite>
   </testsuites>
-  <source>
+<!--
+ignoreIndirectDeprecations: tells PHPUnit that you are only interested in E_DEPRECATED and E_USER_DEPRECATED that are triggered in your own code
+restrictNotices: tells PHPUnit that you are only interested in E_NOTICE and E_USER_NOTICE triggered in your own code
+restrictWarnings: tells PHPUnit that you are only interested in E_WARNING and E_USER_WARNING triggered in your own code
+-->
+  <source
+    ignoreIndirectDeprecations="true"
+    restrictNotices="true"
+    restrictWarnings="true"
+  >
     <include>
       <directory suffix=".php">src</directory>
     </include>
