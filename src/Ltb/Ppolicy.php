@@ -51,8 +51,10 @@ final class Ppolicy {
 
         $forbidden = 0;
         if ( isset($pwd_forbidden_chars) && !empty($pwd_forbidden_chars) ) {
-            preg_match_all("/[$pwd_forbidden_chars]/", $password, $forbidden_res);
-            $forbidden = count( $forbidden_res[0] );
+            $escaped = preg_quote($pwd_forbidden_chars, '/');
+            $pattern = '/[' . $escaped . ']/u';
+            preg_match_all($pattern, $password, $forbidden_res);
+            $forbidden = isset($forbidden_res[0]) ? count($forbidden_res[0]) : 0;
         }
 
         # Complexity: checks for lower, upper, special, digits
