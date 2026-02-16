@@ -110,4 +110,15 @@ interface Directory
      * Get validity end date
      */
     public function getEndDate($entry, $pwdPolicyConfiguration) : ?DateTime;
+
+    /*
+     * Compute password
+     */
+    public function computePassword($ldapInstance, $dn, $password, $hash, $hash_options, $use_exop_passwd) : string;
+
+    /*
+     * Change password and depending attributes in LDAP directory
+     */
+    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ad_options) : array;
+
 }
