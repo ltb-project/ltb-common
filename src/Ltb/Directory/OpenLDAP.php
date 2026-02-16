@@ -398,4 +398,49 @@ class OpenLDAP implements \Ltb\Directory
         return $enddate ? $enddate : null;
     }
 
+    public function computePassword($ldapInstance, $dn, $password, $hash, $hash_options, $use_exop_passwd) : string {
+
+        # If using the password extended operation, compute the password
+        if (!$use_exop_passwd) {
+            if ($hash === "auto") {
+                $old_password_hashed = $ldapInstance->get_password_value($dn, "userPassword");
+                $hash = \Ltb\Password::get_hash_type($old_password_hashed);
+            }
+            $password = \Ltb\Password::make_password($password, $hash, $hash_options);
+        }
+        # If using the password extended operation, just send the cleartext password
+
+        return $password;
+    }
+
+    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ad_options) : array {
+
+        list($error_code, $error_msg, $ppolicy_error_code) = array(null, null, null);
+
+        if ( $custom_pwd_field_mode ) {
+            $pwd_attribute = $custom_pwd_attribute;
+        } else {
+            $pwd_attribute = "userPassword";
+        }
+
+        if ($use_exop_passwd) {
+            list($error_code, $error_msg, $ppolicy_error_code) = $ldapInstance->change_password_with_exop($dn, $oldpassword, $password, $use_ppolicy_control);
+            if( $error_code == 0 )
+            {
+                list($error_code, $error_msg) = $ldapInstance->modify_attributes($dn, $userdata);
+            }
+        } else {
+            # Else just replace with new password
+            $userdata[$pwd_attribute] = $password;
+
+            if ( $use_ppolicy_control ) {
+                list($error_code, $error_msg, $ppolicy_error_code) = $ldapInstance->modify_attributes_using_ppolicy($dn, $userdata);
+            } else {
+                list($error_code, $error_msg) = $ldapInstance->modify_attributes($dn, $userdata);
+            }
+        }
+
+        return array( $error_code, $error_msg, $ppolicy_error_code );
+    }
+
 }
