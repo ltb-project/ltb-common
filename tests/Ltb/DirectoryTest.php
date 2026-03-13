@@ -1,7 +1,8 @@
 <?php
 
 require __DIR__ . '/../../vendor/autoload.php';
-use PHPUnit\Framework\TestCase;
+
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 {
@@ -378,6 +379,153 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
         $isAccountValid = (new Ltb\Directory\OpenLDAP)->isAccountValid($entry, null);
         $this->assertTrue($isAccountValid, "Account should be valid");
+    }
+
+    public function test_openldap_compute_password(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $password = "secret";
+        $hash = "auto";
+        $hash_options=[];
+        $use_exop_passwd = false;
+        $old_password_hash = "{SHA512}PJkJr+wlNU1VHa4hWQuybjjVPyFzuNPcPu5MBH56scHri4UQPjvnumE7MbtcnDYhTcnxSkL9ei/bhIVrylxEwg=="; # 123
+
+        $ldap_connection = "ldap_connection";
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+        $ldapInstanceMock->shouldreceive('get_password_value')
+                         ->with($dn, "userPassword")
+                         ->andReturn($old_password_hash);
+
+        $password = (new Ltb\Directory\OpenLDAP)->computePassword(
+                        $ldapInstanceMock,
+                        $dn,
+                        $password,
+                        $hash,
+                        $hash_options,
+                        $use_exop_passwd);
+        $this->assertEquals(
+            "{SHA512}vSsar3708Jvp9Szi2NWZZ02Bqp1qRCFpbcTZPdBhnWgs5WtNZKnvCXdhztmeD2cmW192CF5bDufKRpayrW/isg==",
+            $password,
+            "invalid OpenLDAP computePassword value");
+    }
+
+    public function test_openldap_changePasswordData_use_exop_passwd(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ), "description" => array( "desc1" ) );
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "user";
+        $use_exop_passwd = true;
+        $use_ppolicy_control = false;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[];
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('change_password_with_exop')
+                         ->with($dn, $oldpassword, $password, $use_ppolicy_control)
+                         ->andReturn( [ 0, "change_password_with_exop_OK", null ] );
+
+        $ldapInstanceMock->shouldreceive('modify_attributes')
+                         ->with($dn, $userdata)
+                         ->andReturn( [ 0, "modify_attributes_OK" ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\OpenLDAP)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by OpenLDAP changePasswordData with exop_passwd");
+        $this->assertEquals( "modify_attributes_OK", $error_msg, "bad error message sent by OpenLDAP changePasswordData with exop_passwd");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by OpenLDAP changePasswordData with exop_passwd");
+    }
+
+    public function test_openldap_changePasswordData_no_exop_passwd_with_ppolicy_control(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ), "description" => array( "desc1" ) );
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "user";
+        $use_exop_passwd = false;
+        $use_ppolicy_control = true;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[];
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $expectedUserData = $userdata;
+        $expectedUserData['userPassword'] = $password;
+        $ldapInstanceMock->shouldreceive('modify_attributes_using_ppolicy')
+                         ->with($dn, $expectedUserData)
+                         ->andReturn( [ 0, "modify_attributes_using_ppolicy_OK", null ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\OpenLDAP)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by OpenLDAP changePasswordData without (no exop_passwd, ppolicy control)");
+        $this->assertEquals( "modify_attributes_using_ppolicy_OK", $error_msg, "bad error message sent by OpenLDAP changePasswordData (no exop_passwd, ppolicy control)");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by OpenLDAP changePasswordData without exop_passwd (no exop_passwd, ppolicy control)");
+    }
+
+    public function test_openldap_changePasswordData_no_exop_passwd_no_ppolicy_control(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ), "description" => array( "desc1" ) );
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "user";
+        $use_exop_passwd = false;
+        $use_ppolicy_control = false;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[];
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $expectedUserData = $userdata;
+        $expectedUserData['userPassword'] = $password;
+        $ldapInstanceMock->shouldreceive('modify_attributes')
+                         ->with($dn, $expectedUserData)
+                         ->andReturn( [ 0, "modify_attributes_without_ppolicy_OK" ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\OpenLDAP)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by OpenLDAP changePasswordData without (no exop_passwd, ppolicy control)");
+        $this->assertEquals( "modify_attributes_without_ppolicy_OK", $error_msg, "bad error message sent by OpenLDAP changePasswordData (no exop_passwd, ppolicy control)");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by OpenLDAP changePasswordData without exop_passwd (no exop_passwd, ppolicy control)");
     }
 
     public function test_activedirectory_islocked_locked_forever(): void
@@ -842,4 +990,212 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $isAccountValid = (new Ltb\Directory\ActiveDirectory)->isAccountValid($entry, null);
         $this->assertTrue($isAccountValid, "Account should be valid");
     }
+
+    public function test_activedirectory_compute_password(): void
+    {
+        $ldapInstance = null;
+        $dn = "";
+        $password = "secret";
+        $hash = null;
+        $hash_options = null;
+        $use_exop_passwd = null;
+
+        $password = (new Ltb\Directory\ActiveDirectory)->computePassword(
+                        $ldapInstance,
+                        $dn,
+                        $password,
+                        $hash,
+                        $hash_options,
+                        $use_exop_passwd);
+        $this->assertEquals(
+            "\x22\x00\x73\x00\x65\x00\x63\x00\x72\x00\x65\x00\x74\x00\x22\x00",
+            $password,
+            "invalid Active Directory computePassword value");
+    }
+
+    public function test_activedirectory_changePasswordData_change_as_user(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ), "description" => array( "desc1" ) );
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "user";
+        $use_exop_passwd = true;
+        $use_ppolicy_control = false;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[];
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('change_ad_password_as_user')
+                         ->with($dn, $oldpassword, $password)
+                         ->andReturn( [ 0, "change_password_OK", null ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\ActiveDirectory)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by ActiveDirectory changePasswordData as user");
+        $this->assertEquals( "change_password_OK", $error_msg, "bad error message sent by ActiveDirectory changePasswordData as user");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by ActiveDirectory changePasswordData as user");
+    }
+
+    #[RunInSeparateProcess]
+    public function test_activedirectory_changePasswordData_use_exop_passwd(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ),
+                                           "description" => array( "desc1" ) );
+        $expectedUserData = $userdata;
+        $expectedUserData["lockoutTime"] = 0;
+        $expectedUserData["pwdLastSet"] = 0;
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "manager";
+        $use_exop_passwd = true;
+        $use_ppolicy_control = false;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[ "force_unlock" => 1, "force_pwd_change" => 1 ];
+
+        $ltbPasswordMock = Mockery::mock('overload:\Ltb\Password');
+
+        $ltbPasswordMock->shouldreceive('set_ad_data')
+                    ->with($userdata, $ldap_options, $password)
+                    ->andReturn($expectedUserData);
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('change_password_with_exop')
+                         ->with($dn, $oldpassword, $password, $use_ppolicy_control)
+                         ->andReturn( [ 0, "change_password_OK", null ] );
+
+        $ldapInstanceMock->shouldreceive('modify_attributes')
+                         ->with($dn, $expectedUserData)
+                         ->andReturn( [ 0, "change_password_OK" ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\ActiveDirectory)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by ActiveDirectory changePasswordData with use_exop_passwd");
+        $this->assertEquals( "change_password_OK", $error_msg, "bad error message sent by ActiveDirectory changePasswordData with use_exop_passwd");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by ActiveDirectory changePasswordData with use_exop_passwd");
+    }
+
+    #[RunInSeparateProcess]
+    public function test_activedirectory_changePasswordData_no_exop_passwd_with_ppolicy(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ),
+                                           "description" => array( "desc1" ) );
+        $expectedUserData = $userdata;
+        $expectedUserData["lockoutTime"] = 0;
+        $expectedUserData["pwdLastSet"] = 0;
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "manager";
+        $use_exop_passwd = false;
+        $use_ppolicy_control = true;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[ "force_unlock" => 1, "force_pwd_change" => 1 ];
+
+        $ltbPasswordMock = Mockery::mock('overload:\Ltb\Password');
+
+        $ltbPasswordMock->shouldreceive('set_ad_data')
+                    ->with($userdata, $ldap_options, $password)
+                    ->andReturn($expectedUserData);
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('modify_attributes_using_ppolicy')
+                         ->with($dn, $expectedUserData)
+                         ->andReturn( [ 0, "change_password_OK", null ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\ActiveDirectory)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by ActiveDirectory changePasswordData (no exop_passwd, with ppolicy)");
+        $this->assertEquals( "change_password_OK", $error_msg, "bad error message sent by ActiveDirectory changePasswordData (no exop_passwd, with ppolicy)");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by ActiveDirectory changePasswordData (no exop_passwd, with ppolicy)");
+    }
+
+    #[RunInSeparateProcess]
+    public function test_activedirectory_changePasswordData_no_exop_passwd_no_ppolicy(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "mail"=> array( "user@domain.com" ),
+                                           "description" => array( "desc1" ) );
+        $expectedUserData = $userdata;
+        $expectedUserData["lockoutTime"] = 0;
+        $expectedUserData["pwdLastSet"] = 0;
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "manager";
+        $use_exop_passwd = false;
+        $use_ppolicy_control = false;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[ "force_unlock" => 1, "force_pwd_change" => 1 ];
+
+        $ltbPasswordMock = Mockery::mock('overload:\Ltb\Password');
+
+        $ltbPasswordMock->shouldreceive('set_ad_data')
+                    ->with($userdata, $ldap_options, $password)
+                    ->andReturn($expectedUserData);
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('modify_attributes')
+                         ->with($dn, $expectedUserData)
+                         ->andReturn( [ 0, "change_password_OK" ] );
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\ActiveDirectory)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 0, $error_code, "bad error code sent by ActiveDirectory changePasswordData (no exop_passwd, no ppolicy)");
+        $this->assertEquals( "change_password_OK", $error_msg, "bad error message sent by ActiveDirectory changePasswordData (no exop_passwd, no ppolicy)");
+        $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by ActiveDirectory changePasswordData (no exop_passwd, no ppolicy)");
+    }
+
 }

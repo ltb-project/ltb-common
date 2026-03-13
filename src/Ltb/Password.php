@@ -290,10 +290,10 @@ final class Password {
 
     static function set_ad_data($userdata, $ad_options, $password): array {
         $userdata["unicodePwd"] = $password;
-        if ( $ad_options['force_unlock'] ) {
+        if ( isset($ad_options['force_unlock']) && $ad_options['force_unlock'] ) {
             $userdata["lockoutTime"] = 0;
         }
-        if ( $ad_options['force_pwd_change'] ) {
+        if ( isset($ad_options['force_pwd_change']) && $ad_options['force_pwd_change'] ) {
             $userdata["pwdLastSet"] = 0;
         }
         return $userdata;
