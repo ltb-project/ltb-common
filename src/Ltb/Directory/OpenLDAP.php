@@ -413,7 +413,7 @@ class OpenLDAP implements \Ltb\Directory
         return $password;
     }
 
-    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ad_options) : array {
+    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ldap_options) : array {
 
         list($error_code, $error_msg, $ppolicy_error_code) = array(null, null, null);
 

@@ -349,14 +349,14 @@ class ActiveDirectory implements \Ltb\Directory
         return $password;
     }
 
-    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ad_options) : array {
+    public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ldap_options) : array {
 
         list($error_code, $error_msg, $ppolicy_error_code) = array(null, null, null);
 
-        $userdata = \Ltb\Password::set_ad_data($userdata, $ad_options, $password);
+        $userdata = \Ltb\Password::set_ad_data($userdata, $ldap_options, $password);
 
-        # Special case: AD mode with password changed as user
-        if ( $ad_mode and $who_change_password === "user" ) {
+        # Special case: password changed as user
+        if ( $who_change_password === "user" ) {
             list($error_code, $error_msg) = $ldapInstance->change_ad_password_as_user($dn, $oldpassword, $password);
         } elseif ($use_exop_passwd) {
             list($error_code, $error_msg, $ppolicy_error_code) = $ldapInstance->change_password_with_exop($dn, $oldpassword, $password, $use_ppolicy_control);
