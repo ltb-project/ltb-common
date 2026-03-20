@@ -1198,4 +1198,74 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by ActiveDirectory changePasswordData (no exop_passwd, no ppolicy)");
     }
 
+    #[RunInSeparateProcess]
+    public function test_activedirectory_getAccountStatus_password_must_change(): void
+    {
+        $ldap = "ldap_connection";
+        $errno = 49;
+        $extended_error = "dummy, dummy, Data: 773";
+        $ldap_error = "ldap_error";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_get_option')
+                    ->with($ldap, 0x0032,  $extended_error )
+                    ->andReturn(true);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap)
+                    ->andReturn($ldap_error);
+
+        #$this->expectErrorLog();
+
+        $accountStatus = (new Ltb\Directory\ActiveDirectory)->getAccountStatus(
+            $ldap,
+            $errno,
+            $extended_error
+        );
+        $this->assertEquals( true, $accountStatus['PASSWORD_MUST_CHANGE'],
+                             "bad account status (PASSWORD_MUST_CHANGE should be set)");
+        $this->assertEquals( false, isset($accountStatus['PASSWORD_EXPIRED']),
+                             "bad account status (PASSWORD_EXPIRED should be unset)");
+        $this->assertEquals( $extended_error, $accountStatus['EXTENDED_ERROR'],
+                             "bad extended_error");
+        $this->assertEquals( $ldap_error, $accountStatus['LDAP_ERROR'],
+                             "bad ldap_error");
+    }
+
+    #[RunInSeparateProcess]
+    public function test_activedirectory_getAccountStatus_password_expired(): void
+    {
+        $ldap = "ldap_connection";
+        $errno = 49;
+        $extended_error = "dummy, dummy, Data: 532";
+        $ldap_error = "ldap_error";
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_get_option')
+                    ->with($ldap, 0x0032,  $extended_error )
+                    ->andReturn(true);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap)
+                    ->andReturn($ldap_error);
+
+        #$this->expectErrorLog();
+
+        $accountStatus = (new Ltb\Directory\ActiveDirectory)->getAccountStatus(
+            $ldap,
+            $errno,
+            $extended_error
+        );
+        $this->assertEquals( false, isset($accountStatus['PASSWORD_MUST_CHANGE']),
+                             "bad account status (PASSWORD_MUST_CHANGE should be unset)");
+        $this->assertEquals( true, $accountStatus['PASSWORD_EXPIRED'],
+                             "bad account status (PASSWORD_EXPIRED should be set)");
+        $this->assertEquals( $extended_error, $accountStatus['EXTENDED_ERROR'],
+                             "bad extended_error");
+        $this->assertEquals( $ldap_error, $accountStatus['LDAP_ERROR'],
+                             "bad ldap_error");
+    }
+
 }

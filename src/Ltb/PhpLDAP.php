@@ -106,5 +106,10 @@ class PhpLDAP {
       return ldap_first_entry(...$args);
   }
 
+  public static function ldap_get_option(&...$args)
+  {
+      return ldap_get_option(...$args);
+  }
+
 }
 ?>

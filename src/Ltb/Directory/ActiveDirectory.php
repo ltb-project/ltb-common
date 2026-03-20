@@ -376,4 +376,38 @@ class ActiveDirectory implements \Ltb\Directory
         return array( $error_code, $error_msg, $ppolicy_error_code );
     }
 
+    public function getAccountStatus($ldap, $errno, $extended_error = null) : array
+    {
+        $accountStatus = array();
+
+        if ( ($errno == 49) ) {
+            if ( \Ltb\PhpLdap::ldap_get_option($ldap, 0x0032, $extended_error) ) {
+
+                $accountStatus['EXTENDED_ERROR'] = $extended_error;
+                $accountStatus['LDAP_ERROR'] = \Ltb\PhpLdap::ldap_error($ldap);
+
+                $extended_error = explode(', ', $extended_error);
+
+                # Test if password must change
+                if ( strpos($extended_error[2], '773') or
+                     strpos($extended_error[0], 'NT_STATUS_PASSWORD_MUST_CHANGE') )
+                {
+                    $accountStatus['PASSWORD_MUST_CHANGE'] = true;
+                }
+
+                # Test if password is expired
+                if ( strpos($extended_error[2], '532') or
+                     strpos($extended_error[0], 'NT_STATUS_ACCOUNT_EXPIRED')
+                   )
+                {
+                    $accountStatus['PASSWORD_EXPIRED'] = true;
+                }
+
+                unset($extended_error);
+            }
+        }
+
+        return $accountStatus;
+    }
+
 }
