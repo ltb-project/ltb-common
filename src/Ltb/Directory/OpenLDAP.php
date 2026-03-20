@@ -415,6 +415,8 @@ class OpenLDAP implements \Ltb\Directory
 
     public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ldap_options) : array {
 
+        # TODO: $ldap_options are currently not implemented
+
         list($error_code, $error_msg, $ppolicy_error_code) = array(null, null, null);
 
         if ( $custom_pwd_field_mode ) {
@@ -441,6 +443,15 @@ class OpenLDAP implements \Ltb\Directory
         }
 
         return array( $error_code, $error_msg, $ppolicy_error_code );
+    }
+
+    public function getAccountStatus($ldap, $errno, $extended_error = null) : array
+    {
+        # TODO: getAccountStatus is currently not implemented for OpenLDAP
+
+        $accountStatus = array();
+
+        return $accountStatus;
     }
 
 }

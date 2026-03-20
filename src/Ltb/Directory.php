@@ -121,4 +121,9 @@ interface Directory
      */
     public function changePasswordData($ldapInstance, $dn, $userdata, $password, $oldpassword, $who_change_password, $use_exop_passwd, $use_ppolicy_control, $custom_pwd_field_mode, $custom_pwd_attribute, $ldap_options) : array;
 
+    /*
+     * Get account status from extended error code
+     */
+    public function getAccountStatus($ldap, $errno, $extended_error = null) : array;
+
 }
