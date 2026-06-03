@@ -379,9 +379,10 @@ class ActiveDirectory implements \Ltb\Directory
     public function getAccountStatus($ldap, $errno, $extended_error = null) : array
     {
         $accountStatus = array();
+        $option = 0x0032;
 
         if ( ($errno == 49) ) {
-            if ( \Ltb\PhpLdap::ldap_get_option($ldap, 0x0032, $extended_error) ) {
+            if ( \Ltb\PhpLdap::ldap_get_option($ldap, $option, $extended_error) ) {
 
                 $accountStatus['EXTENDED_ERROR'] = $extended_error;
                 $accountStatus['LDAP_ERROR'] = \Ltb\PhpLdap::ldap_error($ldap);
