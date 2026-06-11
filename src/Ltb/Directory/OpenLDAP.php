@@ -427,7 +427,7 @@ class OpenLDAP implements \Ltb\Directory
 
         if ($use_exop_passwd) {
             list($error_code, $error_msg, $ppolicy_error_code) = $ldapInstance->change_password_with_exop($dn, $oldpassword, $password, $use_ppolicy_control);
-            if( $error_code == 0 )
+            if( $error_code == 0 and !empty($userdata) )
             {
                 list($error_code, $error_msg) = $ldapInstance->modify_attributes($dn, $userdata);
             }
