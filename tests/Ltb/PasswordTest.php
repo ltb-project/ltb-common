@@ -130,6 +130,9 @@ final class PasswordTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $actual_userdata_update_shadowLastChange = \Ltb\Password::set_shadow_data($userdata, $shadow_options_update_shadowLastChange, $time);
         $this->assertEquals($expected_userdata_update_shadowLastChange, $actual_userdata_update_shadowLastChange);
         
+        $this->assertIsInt($actual_userdata_update_shadowLastChange["sambaPwdCanChange"]);
+        $this->assertIsInt($actual_userdata_update_shadowLastChange["shadowLastChange"]);
+
         $shadow_options_update_shadowExpire = [
             "update_shadowLastChange" => false,
             "update_shadowExpire" => true,
@@ -159,7 +162,6 @@ final class PasswordTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         ];
         $actual_userdata_update_shadowExpire_negative = \Ltb\Password::set_shadow_data($userdata, $shadow_options_update_shadowExpire_negative, $time);
         $this->assertEquals($expected_userdata_update_shadowExpire_negative, $actual_userdata_update_shadowExpire_negative);
-        
         
     }
 }

@@ -301,12 +301,12 @@ final class Password {
 
     static function set_shadow_data($userdata, $shadow_options, $time): array {
         if ( $shadow_options['update_shadowLastChange'] ) {
-            $userdata["shadowLastChange"] = floor($time / 86400);
+            $userdata["shadowLastChange"] = intval(floor($time / 86400));
         }
 
         if ( $shadow_options['update_shadowExpire'] ) {
             if ( $shadow_options['shadow_expire_days'] > 0) {
-              $userdata["shadowExpire"] = floor(($time / 86400) + $shadow_options['shadow_expire_days']);
+              $userdata["shadowExpire"] = intval(floor(($time / 86400)) + $shadow_options['shadow_expire_days']);
             } else {
               $userdata["shadowExpire"] = $shadow_options['shadow_expire_days'];
             }
