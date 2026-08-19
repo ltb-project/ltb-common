@@ -239,6 +239,19 @@ class Ldap {
         return $return;
     }
 
+    function get_sorted_list($ldap_base, $ldap_filter, $key, $value, $reverse = false, $flags = null) {
+
+        $return = $this->get_list($ldap_base, $ldap_filter, $key, $value);
+
+        if ($reverse) {
+            arsort($return, $flags);
+        } else {
+            asort($return, $flags);
+        }
+
+        return $return;
+    }
+
     # if key is not found in attributes, order of entries is preserved
     function ldapSort(array &$entries, $key)
     {
