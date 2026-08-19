@@ -598,6 +598,78 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
+    public function test_get_sorted_list(): void
+    {
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_search')
+                    ->with("ldap_connection", "ou=people,dc=my-domain,dc=com", "(uid=test)", array("cn", "sn"))
+                    ->andReturn("ldap_search_result");
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with("ldap_connection")
+                    ->andReturn(false);
+
+        $phpLDAPMock->shouldreceive('ldap_get_entries')
+                    ->with("ldap_connection","ldap_search_result")
+                    ->andReturn([
+                                    'count' => 3,
+                                    0 => [
+                                        'count' => 2,
+                                        0 => 'cn',
+                                        1 => 'sn',
+                                        'cn' => [
+                                            'count' => 1,
+                                            0 => 'testcnx'
+                                        ],
+                                        'sn' => [
+                                            'count' => 1,
+                                            0 => 'testsnx'
+                                        ]
+                                    ],
+                                    1 => [
+                                        'count' => 2,
+                                        0 => 'cn',
+                                        1 => 'sn',
+                                        'cn' => [
+                                            'count' => 1,
+                                            0 => 'testcnz'
+                                        ],
+                                        'sn' => [
+                                            'count' => 1,
+                                            0 => 'testsnz'
+                                        ]
+                                    ],
+                                    3 => [
+                                        'count' => 2,
+                                        0 => 'cn',
+                                        1 => 'sn',
+                                        'cn' => [
+                                            'count' => 1,
+                                            0 => 'testcny'
+                                        ],
+                                        'sn' => [
+                                            'count' => 1,
+                                            0 => 'testsny'
+                                        ]
+                                    ]
+                                ]);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        // return hashmap: [ cn_value => sn_value ]
+        $result = $ldapInstance->get_sorted_list("ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn");
+
+        $this->assertEquals('testcnx', array_keys($result)[0], "not getting testcnx as key in get_sorted_list function");
+        $this->assertEquals('testsnx', $result["testcnx"], "not getting testsnx as value in get_sorted_list function");
+
+        $result = $ldapInstance->get_sorted_list("ou=people,dc=my-domain,dc=com", "(uid=test)", "cn","sn", true);
+        $this->assertEquals('testcnz', array_keys($result)[0], "not getting testcnz as key in get_sorted_list function");
+        $this->assertEquals('testsnz', $result["testcnz"], "not getting testsnz as value in get_sorted_list function");
+
+    }
+
     public function test_search_with_scope(): void
     {
 
