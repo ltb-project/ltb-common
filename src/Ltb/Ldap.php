@@ -239,14 +239,14 @@ class Ldap {
         return $return;
     }
 
-    function get_sorted_list($ldap_base, $ldap_filter, $key, $value, $reverse = false, $flags = null) {
+    function get_sorted_list($ldap_base, $ldap_filter, $key, $value, $reverse = false) {
 
         $return = $this->get_list($ldap_base, $ldap_filter, $key, $value);
 
         if ($reverse) {
-            arsort($return, $flags);
+            arsort($return);
         } else {
-            asort($return, $flags);
+            asort($return);
         }
 
         return $return;
