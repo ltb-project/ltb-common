@@ -60,7 +60,7 @@ class Mail extends PHPMailer{
      * @param html_body HTML body
      * @return result
      */
-    public function send_mail($mail, $mail_from, $mail_from_name, $subject, $body, $data, $html_body) {
+    public function send_mail($mail, $mail_from, $mail_from_name, $subject, $body, $data, $html_body = NULL) {
 
         $result = false;
 
