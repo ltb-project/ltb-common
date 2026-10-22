@@ -124,8 +124,14 @@ class Ldap {
 
             # Order of the attributes array:
             # [ $search_result_items[], title, sortby, $attributes[] ]
-            array_unshift($attributes, $attributes_map[$search_result_sortby]['attribute']);
-            array_unshift($attributes, $attributes_map[$search_result_title]['attribute']);
+            if( isset( $attributes_map[$search_result_sortby]['attribute'] ) )
+            {
+                array_unshift($attributes, $attributes_map[$search_result_sortby]['attribute']);
+            }
+            if( isset( $attributes_map[$search_result_title]['attribute'] ) )
+            {
+                array_unshift($attributes, $attributes_map[$search_result_title]['attribute']);
+            }
             foreach( array_reverse($search_result_items) as $item ) {
                 array_unshift($attributes, $attributes_map[$item]['attribute']);
             }
