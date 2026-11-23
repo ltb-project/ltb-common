@@ -1350,6 +1350,121 @@ final class LdapTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
 
     }
 
+    #[RunInSeparateProcess]
+    public function test_change_password_with_exop_ppolicy_fail_errno_not_set(): void
+    {
+        // Regression test: PHP's ldap_exop_passwd() called with $ctrls returns
+        // false on failure but leaves ldap_errno() at 0 ("Success").
+        // The failure must not be reported as success.
+        //
+        // Mockery overload mocks cannot write back by-reference arguments of
+        // the variadic \Ltb\PhpLDAP wrappers (&...$args), so the ppolicy
+        // controls and the diagnostic message could not be returned.
+        // Instead, the real \Ltb\PhpLDAP wrapper is used: it calls the ldap
+        // functions unqualified from namespace Ltb, so they are replaced here
+        // by namespaced functions (separate process, no side effects).
+
+        eval('
+            namespace Ltb;
+
+            function ldap_exop_passwd($ldap, $user = "", $old_password = "", $new_password = "", &$ctrls = null) {
+                $ctrls = [
+                    LDAP_CONTROL_PASSWORDPOLICYRESPONSE => [
+                        "oid" => LDAP_CONTROL_PASSWORDPOLICYRESPONSE,
+                        "value" => [ "error" => 8 ] // passwordInHistory
+                    ]
+                ];
+                return false;
+            }
+
+            function ldap_errno($ldap) {
+                return 0;
+            }
+
+            function ldap_error($ldap) {
+                return "Success";
+            }
+
+            function ldap_get_option($ldap, $option, &$value = null) {
+                if ($option == LDAP_OPT_DIAGNOSTIC_MESSAGE) {
+                    $value = "Password is in history of old passwords";
+                    return true;
+                }
+                return false;
+            }
+        ');
+
+        // error_log() writes to stderr, which PHPUnit reports as an error
+        // in a separate process: redirect it to a temporary file
+        $error_log_file = tempnam(sys_get_temp_dir(), 'ltb-test-');
+        ini_set('error_log', $error_log_file);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = "ldap_connection";
+        list($error_code, $error_msg, $ppolicy_error_code) =
+            $ldapInstance->change_password_with_exop(
+                                                        "uid=test,ou=people,dc=my-domain,dc=com",
+                                                        "old",
+                                                        "new",
+                                                        true
+                                                    );
+
+        $this->assertEquals(19, $error_code, 'Failed exop with ppolicy error must return constraintViolation (19)');
+        $this->assertEquals("Password is in history of old passwords", $error_msg, 'Failed exop must return the diagnostic message');
+        $this->assertEquals(8, $ppolicy_error_code, 'Weird ppolicy_error_code returned in failing change_password_with_exop with policy');
+        $this->assertStringContainsString("LDAP - Ppolicy error code: 8", file_get_contents($error_log_file), 'Ppolicy error code not logged');
+
+        unlink($error_log_file);
+
+    }
+
+    public function test_change_password_with_exop_ppolicy_fail_errno_not_set_no_ppolicy_error(): void
+    {
+        // ldap_exop_passwd() fails, ldap_errno() is 0, no ppolicy error in
+        // the response controls and no diagnostic message available:
+        // error code must be LDAP_OTHER (80), error message stays unchanged.
+
+        $ldap_connection = "ldap_connection";
+        $dn = "uid=test,ou=people,dc=my-domain,dc=com";
+        $old_password = "old";
+        $new_password = "new";
+        $ppolicy = true;
+        $res = false;
+
+        $phpLDAPMock = Mockery::mock('overload:Ltb\PhpLDAP');
+
+        $phpLDAPMock->shouldreceive('ldap_exop_passwd')
+                    ->with($ldap_connection, $dn, $old_password, $new_password, array())
+                    ->andReturn($res);
+
+        $phpLDAPMock->shouldreceive('ldap_errno')
+                    ->with($ldap_connection)
+                    ->andReturn(0);
+
+        $phpLDAPMock->shouldreceive('ldap_error')
+                    ->with($ldap_connection)
+                    ->andReturn("Success");
+
+        $phpLDAPMock->shouldreceive('ldap_get_option')
+                    ->with($ldap_connection, LDAP_OPT_DIAGNOSTIC_MESSAGE, \Mockery::any())
+                    ->andReturn(false);
+
+        $ldapInstance = new \Ltb\Ldap( null, null, null, null, null, null, null, null );
+        $ldapInstance->ldap = $ldap_connection;
+        list($error_code, $error_msg, $ppolicy_error_code) =
+            $ldapInstance->change_password_with_exop(
+                                                        $dn,
+                                                        $old_password,
+                                                        $new_password,
+                                                        $ppolicy
+                                                    );
+
+        $this->assertEquals(80, $error_code, 'Failed exop without ppolicy error must return LDAP_OTHER (80)');
+        $this->assertEquals("Success", $error_msg, 'Error message must stay unchanged without diagnostic message');
+        $this->assertFalse($ppolicy_error_code, 'Weird ppolicy_error_code returned in failing change_password_with_exop with policy');
+
+    }
+
     public function test_modify_attributes_using_ppolicy(): void
     {
 

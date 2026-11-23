@@ -450,6 +450,46 @@ final class DirectoryTest extends \Mockery\Adapter\Phpunit\MockeryTestCase
         $this->assertEquals( null, $ppolicy_error_code, "bad ppolicy error code sent by OpenLDAP changePasswordData with exop_passwd");
     }
 
+    public function test_openldap_changePasswordData_use_exop_passwd_ppolicy_error(): void
+    {
+        $dn = "uid=user,ou=people,dc=my-domain,dc=com";
+        $userdata = array( "shadowLastChange" => array( "20000" ) );
+        $password = "newsecret";
+        $oldpassword = "oldsecret";
+        $who_change_password = "user";
+        $use_exop_passwd = true;
+        $use_ppolicy_control = true;
+        $custom_pwd_field_mode = false;
+        $custom_pwd_attribute = "";
+        $ldap_options=[];
+
+        $ldapInstanceMock = Mockery::mock("Ltb\Ldap");
+
+        $ldapInstanceMock->shouldreceive('change_password_with_exop')
+                         ->with($dn, $oldpassword, $password, $use_ppolicy_control)
+                         ->andReturn( [ 19, "Password is in history of old passwords", 8 ] );
+
+        // additional attributes must not be modified when the password change failed
+        $ldapInstanceMock->shouldNotReceive('modify_attributes');
+
+        list($error_code, $error_msg, $ppolicy_error_code) = (new Ltb\Directory\OpenLDAP)->changePasswordData(
+                        $ldapInstanceMock,
+                        $dn,
+                        $userdata,
+                        $password,
+                        $oldpassword,
+                        $who_change_password,
+                        $use_exop_passwd,
+                        $use_ppolicy_control,
+                        $custom_pwd_field_mode,
+                        $custom_pwd_attribute,
+                        $ldap_options
+                    );
+        $this->assertEquals( 19, $error_code, "bad error code sent by OpenLDAP changePasswordData with exop_passwd and ppolicy error");
+        $this->assertEquals( "Password is in history of old passwords", $error_msg, "bad error message sent by OpenLDAP changePasswordData with exop_passwd and ppolicy error");
+        $this->assertEquals( 8, $ppolicy_error_code, "bad ppolicy error code sent by OpenLDAP changePasswordData with exop_passwd and ppolicy error");
+    }
+
     public function test_openldap_changePasswordData_no_exop_passwd_with_ppolicy_control(): void
     {
         $dn = "uid=user,ou=people,dc=my-domain,dc=com";

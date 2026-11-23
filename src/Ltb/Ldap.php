@@ -519,6 +519,18 @@ class Ldap {
             $error_msg = \Ltb\PhpLDAP::ldap_error($this->ldap);
             if (!$exop_passwd) {
                 $ppolicy_error_code = self::get_ppolicy_error_code($ctrls);
+                # PHP's ldap_exop_passwd() called with $ctrls does not set
+                # ldap_errno() on failure (it stays 0 / "Success").
+                # Make sure a failed operation is never reported as success.
+                if ( !$error_code ) {
+                    # ppolicy errors are returned as constraintViolation (19)
+                    $error_code = ($ppolicy_error_code !== false) ? 19 : 80; # 80 = LDAP_OTHER
+                    $diag_opt = LDAP_OPT_DIAGNOSTIC_MESSAGE;
+                    $diag_msg = "";
+                    if ( \Ltb\PhpLDAP::ldap_get_option($this->ldap, $diag_opt, $diag_msg) && $diag_msg ) {
+                        $error_msg = $diag_msg;
+                    }
+                }
             }
         } else {
             $exop_passwd = \Ltb\PhpLDAP::ldap_exop_passwd($this->ldap, $dn, $oldpassword, $password);
